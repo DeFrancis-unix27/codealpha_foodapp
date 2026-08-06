@@ -1,0 +1,13 @@
+asgiref==3.12.1
+Django==5.2.16
+django-filter==26.1
+django-restframework==0.0.1
+djangorestframework==3.17.1
+djangorestframework_simplejwt==5.5.1
+Markdown==3.10.3
+pillow==12.3.0
+pip==22.0.2
+PyJWT==2.13.0
+setuptools==59.6.0
+sqlparse==0.5.5
+typing_extensions==4.16.0
