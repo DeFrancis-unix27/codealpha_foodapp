@@ -6,10 +6,7 @@ import uuid
 class CustomUser(AbstractUser):
     ROLES = [
         ("manager","Manager"),
-        ("chef","Chef"),
-        ("cashier","cashier"),
         ("customer","Customer"),
-        ("waiter","Waiter"),
         ("admin","Admin")
     ]
     id = models.UUIDField(primary_key=True,unique=True,editable=True)
@@ -59,7 +56,7 @@ class InviteStaff(models.Model):
     expiring = models.DateTimeField()
     created_at = models.DateTimeField(auto_now_add=True)
     message = models.TextField()
-    
+
 class Table(models.Model):
     TABLE_STATE = [
         ("occupied","Occupied"),
@@ -132,7 +129,7 @@ class Order(models.Model):
     ]
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
     table = models.ForeignKey(Table, on_delete=models.CASCADE)
-    waiter = models.ForeignKey(CustomUser, on_delete=models.CASCADE, limit_choices_to={'role': 'waiter'})
+    waiter = models.ForeignKey(InviteStaff, on_delete=models.CASCADE, limit_choices_to={'role': 'waiter','status':'accepted'})
     order_number = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     order_time = models.DateTimeField(auto_now_add=True)
     total_price = models.DecimalField(max_digits=10, decimal_places=2)
@@ -173,7 +170,7 @@ class KitchenOrder(models.Model):
         ("cancelled", "Cancelled")
     ]
     order = models.ForeignKey(Order, on_delete=models.CASCADE)
-    chef = models.ForeignKey(CustomUser, on_delete=models.CASCADE, limit_choices_to={'role': 'chef'})
+    chef = models.ForeignKey(InviteStaff, on_delete=models.CASCADE, limit_choices_to={'role': 'chef','status':'accepted'})
     status = models.CharField(choices=STATUS, default="pending", max_length=50)
     preparation_time = models.TimeField()
     completion_time = models.TimeField(blank=True, null=True)
@@ -194,7 +191,7 @@ class InventoryTransaction(models.Model):
     transaction_type = models.CharField(max_length=50, choices=TRANSACTION_TYPE)
     quantity = models.IntegerField()
     transaction_time = models.DateTimeField(auto_now_add=True)
-    performed_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    performed_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE, limit_choices_to={'role':'manager'})
 
 class Review(models.Model):
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)

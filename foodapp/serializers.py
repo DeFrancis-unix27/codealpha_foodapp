@@ -97,7 +97,7 @@ class OrderSerializer(serializers.ModelSerializer):
         fields = "__all__"
     def validate(self, attrs):
         waiter = attrs.get("waiter")
-        if waiter.role != "waiter":
+        if waiter.role != "waiter" and waiter.status != "accepted":
             raise serializers.ValidationError("this role is required by only waiters")
         return attrs
 
@@ -118,7 +118,7 @@ class KitchenOrder(serializers.ModelSerializer):
         fields = "__all__"
     def validate(self, attrs):
         chef = attrs.get("chef")
-        if chef.role != "chef":
+        if chef.role != "chef" and chef.status != "accepted":
             raise serializers.ValidationError("this role is only assigend to chef's")
         return attrs
 
@@ -134,7 +134,7 @@ class InventoryTransactionSerializer(serializers.ModelSerializer):
     
     def validate(self, attrs):
         person = attrs.get("performed_by")
-        if person.role != "cashier" or person.role != "manager" or person.role != "chef":
+        if person.role != "manager":
             raise serializers.ValidationError("only cashiers and managers can perform this tasks ")
         return attrs
 
@@ -154,5 +154,7 @@ class InviteStaff(serializers.ModelSerializer):
         model = InviteStaff
         fields = "__all__"
     def validate(self, attrs):
-        
+        inviter = attrs.get("invited_by")
+        if inviter.role != "manager" or inviter.role != "admin":
+            raise serializers.ValidationError("only managers and admins can invite staff")
         return attrs
