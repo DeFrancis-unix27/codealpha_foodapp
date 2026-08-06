@@ -35,7 +35,7 @@ class RegistrationSerializer(serializers.ModelSerializer):
         ]
 
     def create(self, validated_data):
-        if validated_data("confirm_password") == validated_data("password"):
+        if validated_data.get("confirm_password") == validated_data.get("password"):
             validated_data.pop("confirm_password")
             password = validated_data.pop("password")
             user = CustomUser(**validated_data)
@@ -55,7 +55,7 @@ class LoginSerializer(serializers.Serializer):
         try:
             user = CustomUser.objects.get(username=username)
         except CustomUser.DoesNotExist:
-            serializers.ValidationError("No such user")
+            raise serializers.ValidationError("No such user")
         if not check_password(password,user.password):
             raise serializers.ValidationError("invalid password")
         return attrs
@@ -112,7 +112,7 @@ class PaymentsSerializer(serializers.ModelSerializer):
         model = Payment
         fields = "__all__"
 
-class KitchenOrder(serializers.ModelSerializer):
+class KitchenOrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = KitchenOrder
         fields = "__all__"
@@ -149,7 +149,7 @@ class NotificationSerializer(serializers.ModelSerializer):
         model = Notification
         fields = "__all__"
 
-class InviteStaff(serializers.ModelSerializer):
+class InviteStaffSerializer(serializers.ModelSerializer):
     class Meta:
         model = InviteStaff
         fields = "__all__"
