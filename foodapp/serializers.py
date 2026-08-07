@@ -67,8 +67,8 @@ class ResturantSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
     def validate(self, attrs):
-        if attrs.get("owner").role != "manager" and attrs.get("owner").role != "admin":
-            raise serializers.ValidationError("only vendors cand create Resturant")
+        if attrs.get("owner").role != "manager":
+            raise serializers.ValidationError("only manager's can create Resturant")
         return attrs
 
 class TableSerializer(serializers.ModelSerializer):

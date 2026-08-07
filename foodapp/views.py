@@ -8,7 +8,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import IsAuthenticated, AllowAny
-
+from rest_framework.exceptions import PermissionDenied
 # Create your views here.
 
 
@@ -38,3 +38,38 @@ class Login(APIView):
             }
         )
 
+class CreateResturant(generics.CreateAPIView):
+    queryset = Resturant.objects.all()
+    serializer_class = ResturantSerializer
+    permissions_classess = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        if self.request.user.role !=  "manager":
+            raise PermissionDenied("action can only be performed by managers")
+        serializer.save(owner=self.request.user)
+
+
+class UpdateResturant(generics.UpdateAPIView):
+    queryset = Resturant.objects.all()
+    serializer_class = ResturantSerializer
+    permissions_classess = [IsAuthenticated]
+
+    def perform_update(self, serializer):
+        if self.request.user.role !=  "manager":
+            raise PermissionDenied("action can only be performed by managers")
+        serializer.save(owner=self.request.user)
+
+class ListResturant(generics.ListAPIView):
+    queryset = Resturant.objects.all()
+    serializer_class = ResturantSerializer
+    permissions_classess = [AllowAny]
+
+class RetriveResturant(generics.RetrieveAPIView):
+    queryset = Resturant.objects.all()
+    serializer_class = ResturantSerializer
+    permissions_classess = [IsAuthenticated]
+
+    def perform_retrieve(self, serializer):
+        if self.request.user.role !=  "manager":
+            raise PermissionDenied("action can only be performed by managers")
+        serializer.save(owner=self.request.user)
