@@ -175,7 +175,7 @@ class KitchenOrder(models.Model):
     preparation_time = models.TimeField()
     completion_time = models.TimeField(blank=True, null=True)
 
-class  Inventory(models.Model):
+class Inventory(models.Model):
     resturant = models.ForeignKey(Resturant, on_delete=models.CASCADE)
     item_name = models.CharField(max_length=100)
     quantity = models.IntegerField()
