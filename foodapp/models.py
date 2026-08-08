@@ -28,7 +28,7 @@ class Resturant(models.Model):
     email = models.EmailField()
     opening_time= models.TimeField()
     closing_time = models.TimeField()
-    created_at = models.DateTimeField(auto_add_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
     def save(self, *args, **kwargs):
         if self.owner.role != "manager" and self.owner.role != "admin":
             raise PermissionError("you are not permitted to perform this action")
@@ -52,7 +52,7 @@ class InviteStaff(models.Model):
     Staff = models.ForeignKey(CustomUser,on_delete=models.CASCADE, related_name="staff")
     status = models.CharField(choices=STATUS,max_length=40,default="pending")
     role = models.CharField(choices=ROLE,max_length=40,default="waiter")
-    accepted_at = models.DateTimeField(auto_now_add=True)
+    accepted_at = models.DateTimeField()
     expiring = models.DateTimeField()
     created_at = models.DateTimeField(auto_now_add=True)
     message = models.TextField()
@@ -60,7 +60,7 @@ class InviteStaff(models.Model):
 class Table(models.Model):
     TABLE_STATE = [
         ("occupied","Occupied"),
-        ("available","Avialable"),
+        ("available","Available"),
         ("cleaning","Cleaning"),
         ("reserved","Reserved")
     ]
@@ -85,13 +85,13 @@ class MenuItem(models.Model):
 
 class Customer(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
-    surname = models.CharField(max_length=30)
+    username = models.CharField(max_length=30)
     email = models.EmailField()
     point = models.IntegerField()
 
     def save(self,*args, **kwargs):
         try:
-            if self.user:
+            if self.user != None:
                 self.username = self.user.username
                 self.email = self.user.email
         except Exception:
@@ -127,9 +127,9 @@ class Order(models.Model):
         ("takeaway", "Takeaway"),
         ("delivery", "Delivery")
     ]
-    customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
-    table = models.ForeignKey(Table, on_delete=models.CASCADE)
-    waiter = models.ForeignKey(InviteStaff, on_delete=models.CASCADE, limit_choices_to={'role': 'waiter','status':'accepted'})
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE,blank=True,null=True)
+    table = models.ForeignKey(Table, on_delete=models.SET_NULL,blank=True,null=True)
+    waiter = models.ForeignKey(InviteStaff, on_delete=models.SET_NULL,blank=True,null=True)
     order_number = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     order_time = models.DateTimeField(auto_now_add=True)
     total_price = models.DecimalField(max_digits=10, decimal_places=2)
@@ -206,4 +206,8 @@ class Notification(models.Model):
     is_read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
-
+class Report(models.Model):
+    customer = models.ForeignKey(Customer,on_delete=models.CASCADE)
+    resturant = models.ForeignKey(Resturant,on_delete=models.CASCADE)
+    reason = models.TextField()
+    reslove = models.TextField()

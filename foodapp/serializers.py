@@ -14,9 +14,10 @@ from .models import (
     Review,
     Reservation,
     Notification,
-    InviteStaff
+    InviteStaff,
 )
 from django.contrib.auth.hashers import check_password
+
 
 class RegistrationSerializer(serializers.ModelSerializer):
     confirm_password = serializers.CharField(write_only=True)
@@ -41,6 +42,8 @@ class RegistrationSerializer(serializers.ModelSerializer):
             user = CustomUser(**validated_data)
             user.set_password(password)
             user.save()
+        if validated_data.get("confirm_password") != validated_data.get("password"):
+            raise serializers.ValidationError("passwords do not match")
         return user
 
 
@@ -56,10 +59,10 @@ class LoginSerializer(serializers.Serializer):
             user = CustomUser.objects.get(username=username)
         except CustomUser.DoesNotExist:
             raise serializers.ValidationError("No such user")
-        if not check_password(password,user.password):
+        if not check_password(password, user.password):
             raise serializers.ValidationError("invalid password")
         return attrs
-        
+
 
 class ResturantSerializer(serializers.ModelSerializer):
     class Meta:
@@ -71,40 +74,90 @@ class ResturantSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("only manager's can create Resturant")
         return attrs
 
+
 class TableSerializer(serializers.ModelSerializer):
     class Meta:
         model = Table
-        fields ="__all__"
+        fields = "__all__"
+
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
         fields = "__all__"
 
+
 class MenuItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = MenuItem
         fields = "__all__"
+
 
 class ReservationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Reservation
         fields = "__all__"
 
-class OrderSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Order
-        fields = "__all__"
-    def validate(self, attrs):
-        waiter = attrs.get("waiter")
-        if waiter.role != "waiter" and waiter.status != "accepted":
-            raise serializers.ValidationError("this role is required by only waiters")
-        return attrs
 
-class OrdeItemSerializer(serializers.ModelSerializer):
+class OrderItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = OrderItem
-        fields = "__all__"
+        fields = ["menu_item", "quantity"]
+
+
+class OrderSerializer(serializers.ModelSerializer):
+    orderItem = OrderItemSerializer(many=True)
+
+    class Meta:
+        model = Order
+        fields = [
+            "customer",
+            "table",
+            "waiter",
+            "total_price",
+            "status",
+            "order_type",
+            "orderItem",
+            "status",
+        ]
+        read_only = ["order_number", "status", "total_price", "order_time"]
+
+    def validate(self, attrs):
+        waiter = attrs.get("waiter")
+        rest_table = attrs.get("table").resturant
+        if (
+            waiter.role != "waiter"
+            and waiter.status != "accepted"
+            and waiter.Resturant != rest_table
+        ):
+            raise serializers.ValidationError(
+                "this role is required by only waiters that has been assigned to the resturant "
+            )
+        elif waiter != rest_table.owner:
+            raise serializers.ValidationError(
+                "this role is required by only waiters and the resturant manager"
+            )
+        if attrs.get("table") != "available":
+            raise serializers.ValidationError("Table in availble at the moment")
+        if attrs.get("orderItem").order.order_number != attrs.get("order_number"):
+            raise serializers.ValidationError("order item doesn't belong to this Order")
+        return attrs
+
+    def create(self, validated_data):
+        items = validated_data.pop("orderItem")
+        total = sum(item["menu_item"].price * item["quantity"] for item in items)
+        order = Order.objects.create(**validated_data, total_price=total)
+        for item in items:
+            OrderItem.objects.create(
+                order=order,
+                menu_item=item["menu_item"],
+                quantity=item["quantity"],
+                price=item["menu_item"].price,
+                subtotal=item["menu_item"].price * item["quantity"],
+            )
+        order.table.state = "occupied"
+        order.table.save()
+        return order
 
 
 class PaymentsSerializer(serializers.ModelSerializer):
@@ -112,31 +165,38 @@ class PaymentsSerializer(serializers.ModelSerializer):
         model = Payment
         fields = "__all__"
 
+
 class KitchenOrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = KitchenOrder
         fields = "__all__"
+
     def validate(self, attrs):
         chef = attrs.get("chef")
         if chef.role != "chef" and chef.status != "accepted":
             raise serializers.ValidationError("this role is only assigend to chef's")
         return attrs
 
+
 class InventorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Inventory
         fields = "__all__"
 
+
 class InventoryTransactionSerializer(serializers.ModelSerializer):
     class Meta:
         model = InventoryTransaction
         fields = "__all__"
-    
+
     def validate(self, attrs):
         person = attrs.get("performed_by")
         if person.role != "manager":
-            raise serializers.ValidationError("only cashiers and managers can perform this tasks ")
+            raise serializers.ValidationError(
+                "only cashiers and managers can perform this tasks "
+            )
         return attrs
+
 
 class ReviewSerializer(serializers.ModelSerializer):
     class Meta:
@@ -149,12 +209,16 @@ class NotificationSerializer(serializers.ModelSerializer):
         model = Notification
         fields = "__all__"
 
+
 class InviteStaffSerializer(serializers.ModelSerializer):
     class Meta:
         model = InviteStaff
         fields = "__all__"
+
     def validate(self, attrs):
         inviter = attrs.get("invited_by")
         if inviter.role != "manager" or inviter.role != "admin":
-            raise serializers.ValidationError("only managers and admins can invite staff")
+            raise serializers.ValidationError(
+                "only managers and admins can invite staff"
+            )
         return attrs
