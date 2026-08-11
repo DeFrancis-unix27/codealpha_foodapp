@@ -19,6 +19,11 @@ class registerView(generics.CreateAPIView):
     serializer_class = RegistrationSerializer
     permission_classes = [AllowAny]
 
+    # def perform_create(self, serializer):
+    #     user = self.request.user
+    #     Customer.objects.create(user=user)
+    #     serializer.save(self.request.user)
+
 
 class LoginView(APIView):
     perimission_classes = [AllowAny]
@@ -175,6 +180,7 @@ class accept_inviteView(APIView):
         )
         return invite
 
+
 class reject_inviteView(APIView):
     queryset = InviteStaff.objects.all()
     serializer_class = InviteStaffSerializer
@@ -204,6 +210,106 @@ class reject_inviteView(APIView):
         return invite
 
 
+class CreateCategoryView(generics.CreateAPIView):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        if self.request.user.role != "manager" and serializer.validated_data['resturant'].owner != self.request.user:
+            raise PermissionDenied("action can only be performed by managers")
+        serializer.save(owner=self.request.user)
+
+class UpdateCategoryView(generics.UpdateAPIView):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_update(self, serializer):
+        if self.request.user.role != "manager" and serializer.validated_data['resturant'].owner != self.request.user:
+            raise PermissionDenied("action can only be performed by managers")
+        serializer.save(owner=self.request.user)
+class ListCategoryView(generics.ListAPIView):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+    permission_classes = [IsAuthenticated]
+
+class RetriveCategoryView(generics.RetrieveAPIView):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+    permission_classes = [IsAuthenticated]
+
+class DestroyCategoryView(generics.DestroyAPIView):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_destroy(self, serializer):
+        if self.request.user.role != "manager" and serializer.validated_data['resturant'].owner != self.request.user:
+            raise PermissionDenied("action can only be performed by managers")
+        serializer.save(owner=self.request.user)
+
+
+class CreateMenuItemView(generics.CreateAPIView):
+    queryset = MenuItem.objects.all()
+    serializer_class = MenuItemSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        chef = serializer.validated_data["chef"]
+        chef_rest = serializer.validated_data["chef"].Resturant
+        resturant = serializer.validated_data["category"].resturant
+
+        if self.request.user != resturant.owner or chef.role != "chef":
+            if chef != None and chef_rest != resturant:
+                raise PermissionDenied("Your are not approved to perform this action")
+        serializer.save(chef=self.request.user)
+
+
+class ListMenuItemView(generics.ListAPIView):
+    queryset = MenuItem.objects.all()
+    serializer_class = MenuItemSerializer
+    permission_classes = [IsAuthenticated]
+
+
+class RetriveMenuItemView(generics.RetrieveAPIView):
+    queryset = MenuItem.objects.all()
+    serializer_class = MenuItemSerializer
+    permission_classes = [IsAuthenticated]
+
+
+class UpdateMenuItemView(generics.UpdateAPIView):
+    queryset = MenuItem.objects.all()
+    serializer_class = MenuItemSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_update(self, serializer):
+        chef = serializer.validated_data["chef"]
+        chef_rest = serializer.validated_data["chef"].Resturant
+        resturant = serializer.validated_data["category"].resturant
+
+        if self.request.user != resturant.owner or chef.role != "chef":
+            if chef != None and chef_rest != resturant:
+                raise PermissionDenied("Your are not approved to perform this action")
+        serializer.save(chef=self.request.user)
+
+
+class DestroyMenuItemView(generics.DestroyAPIView):
+    queryset = MenuItem.objects.all()
+    serializer_class = MenuItemSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_destroy(self, serializer):
+        chef = serializer.validated_data["chef"]
+        chef_rest = serializer.validated_data["chef"].Resturant
+        resturant = serializer.validated_data["category"].resturant
+
+        if self.request.user != resturant.owner or chef.role != "chef":
+            if chef != None and chef_rest != resturant:
+                raise PermissionDenied("Your are not approved to perform this action")
+        serializer.save(chef=self.request.user)
+
+
 class CreateOrderView(APIView):
     queryset = Order.objects.all()
     permission_classes = [IsAuthenticated]
@@ -231,7 +337,7 @@ class CreateOrderView(APIView):
                 user=serializer.validated_data.get("customer"),
                 message=f"Hello {serializer.validated_data.get('customer').username} your order at {table.resturant} has been placed",
             )
-        serializer.save(self.request.user)
+        serializer.save(chef=self.request.user)
 
 
 class UpdateOrderView(generics.UpdateAPIView):
@@ -249,55 +355,69 @@ class UpdateOrderView(generics.UpdateAPIView):
             raise ValidationError("you are nor allowed to perform this action")
         serializer.save(self.request.user)
 
+
 class cancelOrderView(APIView):
-    permission_classes  = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
 
-    def post(self,request,id):
-        order = get_object_or_404(Order,id=id)
+    def post(self, request, id):
+        order = get_object_or_404(Order, id=id)
         if self.request.user == order.customer and order.status != "pending":
             Notification.objects.create(
-            user=order.waiter,
-            message=f"a cancle request has been sent for the order {order.order_number} at table {order.table} in {order.table.resturant} resturant by there customer {order.customer}"
+                user=order.waiter,
+                message=f"a cancle request has been sent for the order {order.order_number} at table {order.table} in {order.table.resturant} resturant by there customer {order.customer}",
             )
-            raise PermissionDenied("you can't cancel any order that's not pending your request as be sent to the waiter but the waiter can't cancle a ready food")
-        if self.request.user == order.waiter or self.request.user == order.table.resturant.owner:
-            if order.status not in ["pending","preparing"]:
+            raise PermissionDenied(
+                "you can't cancel any order that's not pending your request as be sent to the waiter but the waiter can't cancle a ready food"
+            )
+        if (
+            self.request.user == order.waiter
+            or self.request.user == order.table.resturant.owner
+        ):
+            if order.status not in ["pending", "preparing"]:
                 Notification.objects.create(
                     user=order.customer,
-                    message=f"Hello customer {order.customer} the waiter and the manager tried to cancel your order for you but your order was {order.status}"
+                    message=f"Hello customer {order.customer} the waiter and the manager tried to cancel your order for you but your order was {order.status}",
                 )
-                raise PermissionDenied(f"you can't cancel a {order.status} order we have notified your customer about it ")
+                raise PermissionDenied(
+                    f"you can't cancel a {order.status} order we have notified your customer about it "
+                )
         Notification.objects.create(
             user=order.customer,
-            message=f"you have successfully cancelled your order {order.number} on {order.table} at {order.table.resturant}  warinig: if your are not the one that cancelled it please please send your report to {order.table.resturant}"
+            message=f"you have successfully cancelled your order {order.number} on {order.table} at {order.table.resturant}  warinig: if your are not the one that cancelled it please please send your report to {order.table.resturant}",
         )
         if order.waiter != None:
             Notification.objects.create(
                 user=order.waiter,
-                message=f"your customer {order.customer} on {order.table} order has been cancelled"
+                message=f"your customer {order.customer} on {order.table} order has been cancelled",
             )
             Notification.objects.create(
                 user=order.table.resturant.owner,
-                message=f"your customer {order.customer} on {order.table} order {order.order_number}has been cancelled"
-                )
+                message=f"your customer {order.customer} on {order.table} order {order.order_number}has been cancelled",
+            )
         else:
             Notification.objects.create(
                 user=order.table.resturant.owner,
-                message=f"your customer {order.customer} on {order.table} order has been cancelled"
-                )
+                message=f"your customer {order.customer} on {order.table} order has been cancelled",
+            )
         return order
 
-class deliverrOderView(APIView):
+
+class deliverOrderView(APIView):
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
     permission_classes = [IsAuthenticated]
 
-    def post(self,request,id):
-        order = get_object_or_404(Order,id=id)
-        if self.request.user != order.waiter or self.request.user != order.table.resturant.owner:
-            raise PermissionDenied("only the resturant manager or waiter can send a deliver massage")
+    def post(self, request, id):
+        order = get_object_or_404(Order, id=id)
+        if (
+            self.request.user != order.waiter
+            or self.request.user != order.table.resturant.owner
+        ):
+            raise PermissionDenied(
+                "only the resturant manager or waiter can send a deliver massage"
+            )
         if order.status != "ready":
             raise ValidationError("you can only deliver a ready order")
         order.status = "delivered"
@@ -305,14 +425,283 @@ class deliverrOderView(APIView):
         if order.waiter != None:
             Notification.objects.create(
                 user=order.waiter,
-                message=f"the order has successfully be delivered to the customer {order.customer}"
+                message=f"the order has successfully be delivered to the customer {order.customer}",
             )
             Notification.objects.create(
                 user=order.table.resturant.owner,
-                message=f"the order has successfully be delivered to the customer {order.customer}"
+                message=f"the order has successfully be delivered to the customer {order.customer}",
             )
         else:
             Notification.objects.create(
                 user=order.table.resturant.owner,
-                message=f"the order has successfully be delivered to the customer {order.customer}"
+                message=f"the order has successfully be delivered to the customer {order.customer}",
             )
+        return order
+
+
+class ListOrderView(generics.ListAPIView):
+    serializer_class = OrderSerializer
+    permission_classes = [IsAuthenticated]
+    queryset = Order.objects.all()
+
+    def get_queryset(self):
+        if self.request.user.role == "customer":
+            return Order.objects.filter(customer=self.request.user.customer)
+        elif self.request.user.role == "waiter":
+            return Order.objects.filter(waiter__staff=self.request.user)
+        elif self.request.user.role == "manager":
+            return Order.objects.filter(table__resturant__owner=self.request.user)
+        else:
+            raise PermissionDenied("you are not allowed to view this orders")
+        return super().get_queryset()
+
+
+class RetrieveOrderView(generics.RetrieveAPIView):
+    serializer_class = OrderSerializer
+    permission_classes = [IsAuthenticated]
+    queryset = Order.objects.all()
+
+    def get_queryset(self, serializer):
+        if self.request.user.role == "customer":
+            return Order.objects.filter(customer=self.request.user.customer)
+        elif self.request.user.role == "waiter":
+            return Order.objects.filter(waiter__staff=self.request.user)
+        elif self.request.user.role == "manager":
+            return Order.objects.filter(table__resturant__owner=self.request.user)
+        else:
+            raise PermissionDenied("you are not allowed to view this orders")
+        return super().get_queryset(serializer)
+
+class CreateTableView(generics.CreateAPIView):
+    queryset = Table.objects.all()
+    serializer_class = TableSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        if self.request.user.role != "manager" and serializer.validated_data['resturant'].owner != self.request.user:
+            raise PermissionDenied("action can only be performed by managers")
+        serializer.save(owner=self.request.user)    
+
+class UpdateTableView(generics.UpdateAPIView):
+    queryset = Table.objects.all()
+    serializer_class = TableSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_update(self, serializer):
+        if self.request.user.role != "manager" and serializer.validated_data['resturant'].owner != self.request.user:
+            raise PermissionDenied("action can only be performed by managers")
+        serializer.save(owner=self.request.user)
+
+class ListTableView(generics.ListAPIView):
+    queryset = Table.objects.all()
+    serializer_class = TableSerializer
+    permission_classes = [IsAuthenticated]
+
+class RetrieveTableView(generics.RetrieveAPIView):
+    queryset = Table.objects.all()
+    serializer_class = TableSerializer
+    permission_classes = [IsAuthenticated]
+
+class DestroyTableView(generics.DestroyAPIView):
+    queryset = Table.objects.all()
+    serializer_class = TableSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_destroy(self, serializer):
+        if self.request.user.role != "manager" and serializer.validated_data['resturant'].owner != self.request.user:
+            raise PermissionDenied("action can only be performed by managers")
+        serializer.save(owner=self.request.user)
+
+
+class CreateReservationView(generics.CreateAPIView):
+    queryset = Reservation.objects.all()
+    serializer_class = ReservationSerializer
+    permission_classes = [AllowAny]
+
+class ListReservationView(generics.ListAPIView):
+    queryset = Reservation.objects.all()
+    serializer_class = ReservationSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Reservation.objects.filter(customer=self.request.user)
+
+
+class RetrieveReservationView(generics.RetrieveAPIView):
+    queryset = Reservation.objects.all()
+    serailizer_class = ReservationSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Reservation.objects.filter(customer=self.request.user)
+    
+class DestroyReservationView(generics.DestoryAPIView):
+    queryset = Reservation.objects.all()
+    serializer_class = ReservationSerializer
+    permission_classes = [IsAuthenticated]
+
+
+class CreateReportView(generics.CreateAPIView):
+    queryset = Report.objects.all()
+    serializer_class = ReportSerializer
+    permission_classes = [IsAuthenticated]
+
+class ListReportView(generics.ListAPIView):
+    queryset = Report.objects.all()
+    serializer_class = ReportSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Report.objects.filter(resturant__owner=self.request.user)
+
+class RetrieveReportView(generics.RetrieveAPIView):
+    queryset = Report.objects.all()
+    serializer_class = ReportSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Report.objects.filter(resturant__owner=self.request.user)
+
+class ResolveReportView(APIView):
+    queryset = Report.objects.all()
+    serializer_class = ReportSerializer
+    permission_classes = [IsAuthenticated]
+
+    def post(self,request, id):
+        report = get_object_or_404(Report,id=id)
+        if report.resolved_by != report.resturant.owner:
+            raise PermissionDenied("only the resturant owner can resolve this report")
+        report.resolved_by = self.request.user
+        report.resolution = request.data.get("resolution")
+        report.resolved_date = timezone.now()
+        report.is_resolved = True
+        report.save()
+
+class ListNotificationView(generics.ListAPIView):
+    queryset = Notification.objects.all()
+    serializer_class = NotificationSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Notification.objects.filter(user=self.request.user)
+
+class RetrieveNotificationView(generics.RetrieveAPIView):
+    queryset = Notification.objects.all()
+    serializer_class = NotificationSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Notification.objects.filter(user=self.request.user)
+        
+class CreatePaymentView(generics.CreateAPIView):
+    queryset = Payment.objects.all()
+    serializer_class = PaymentSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        order = serializer.validated_data.get("order")
+        if self.request.user != order.customer.user:
+            raise PermissionDenied("you are not allowed to make payment for this order")
+        if order.status != "delivered":
+            raise ValidationError("you can only make payment for delivered orders")
+        serializer.save(sender=self.request.user, resturant=order.table.resturant)
+        serializer.save(customer=self.request.user.customer)
+
+class ListPaymentView(generics.ListAPIView):
+    queryset = Payment.objects.all()
+    serializer_class = PaymentSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        if self.request.user.role == "customer":
+            return Payment.objects.filter(customer=self.request.user.customer)
+        elif self.request.user.role == "manager":
+            return Payment.objects.filter(order__table__resturant__owner=self.request.user)
+        else:
+            raise PermissionDenied("you are not allowed to view this payments")
+
+class RetrivePaymentView(generics.RetrieveAPIView):
+    queryset = Payment.objects.all()
+    serializer_class = PaymentSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        if self.request.user.role == "customer":
+            return Payment.objects.filter(customer=self.request.user.customer)
+        elif self.request.user.role == "manager":
+            return Payment.objects.filter(order__table__resturant__owner=self.request.user)
+        else:
+            raise PermissionDenied("you are not allowed to view this payments")
+
+class CreateKitchenView(generics.CreateAPIView):
+    queryset = KitchenOrder.objects.all()
+    serializer_class = KitchenOrderSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        order = serializer.validated_data.get("order")
+        chef = serializer.validated_data.get("chef")
+        if self.request.user != chef.staff:
+            raise PermissionDenied("you are not allowed to create this kitchen order")
+        if order.status != "pending":
+            raise ValidationError("you can only create kitchen order for pending orders")
+        serializer.save(chef=self.request.user)
+class ListKitchenView(generics.ListAPIView):
+    queryset = KitchenOrder.objects.all()
+    serializer_class = KitchenOrderSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        if self.request.user.role == "chef":
+            return KitchenOrder.objects.filter(chef__staff=self.request.user)
+        elif self.request.user.role == "manager":
+            return KitchenOrder.objects.filter(order__table__resturant__owner=self.request.user)
+        else:
+            raise PermissionDenied("you are not allowed to view this kitchen orders")
+
+class RetrieveKitchenView(generics.RetrieveAPIView):
+    queryset = KitchenOrder.objects.all()
+    serializer_class = KitchenOrderSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        if self.request.user.role == "chef":
+            return KitchenOrder.objects.filter(chef__staff=self.request.user)
+        elif self.request.user.role == "manager":
+            return KitchenOrder.objects.filter(order__table__resturant__owner=self.request.user)
+        else:
+            raise PermissionDenied("you are not allowed to view this kitchen orders")
+class DestroyKitchenView(generics.DestroyAPIView):
+    queryset = KitchenOrder.objects.all()
+    serializer_class = KitchenOrderSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_destroy(self, serializer):
+        if self.request.user.role != "chef" and serializer.validated_data['order'].table.resturant.owner != self.request.user:
+            raise PermissionDenied("action can only be performed by chefs or resturant managers")
+        serializer.save(owner=self.request.user)
+class CancelKitchenView(generics.UpdateAPIView):
+    queryset = KitchenOrder.objects.all()
+    serializer_class = KitchenOrderSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_update(self, serializer):
+        status = serializer.validated_data.get("status")
+        if status == "cancelled":
+            raise ValidationError("kitchen is already cancelled")
+        if self.request.user.role != "chef" and serializer.validated_data['order'].table.resturant.owner != self.request.user:
+            raise PermissionDenied("action can only be performed by chefs or resturant managers")
+        serializer.save(status="cancelled", chef=self.request.user)
+
+class ReadyKitchenView(generics.UpdateAPIView):
+    queryset = KitchenOrder.objects.all()
+    serializer_class = KitchenOrderSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_update(self, serializer):
+        status = serializer.validated_data.get("status")
+        if status == "ready":
+            raise ValidationError("kitchen is already ready")
+        if self.request.user.role != "chef" and serializer.validated_data['order'].table.resturant.owner != self.request.user:
+            raise PermissionDenied("action can only be performed by chefs or resturant managers")
+        serializer.save(status="ready", chef=self.request.user)

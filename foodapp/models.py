@@ -77,6 +77,7 @@ class Category(models.Model):
 class MenuItem(models.Model):
     category = models.ForeignKey(Category,on_delete=models.CASCADE)
     name = models.CharField(max_length=40)
+    chef = models.ForeignKey(InviteStaff, on_delete=models.CASCADE)
     description = models.TextField()
     price = models.DecimalField(decimal_places=2, max_digits=10)
     image = models.ImageField(upload_to="menu/")
@@ -84,7 +85,7 @@ class MenuItem(models.Model):
     is_avaiable =models.BooleanField(default=False)
 
 class Customer(models.Model):
-    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
     username = models.CharField(max_length=30)
     email = models.EmailField()
     point = models.IntegerField()
@@ -157,6 +158,8 @@ class Payment(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE)
     payment_time = models.DateTimeField(auto_now_add=True)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
+    sender = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="sender")
+    resturant = models.ForeignKey(Resturant, on_delete=models.CASCADE)
     payment_method = models.CharField(max_length=50, choices=PAYMENT_METHODS)
     status = models.CharField(max_length=50, choices=STATUS, default="pending")
     transaction_id = models.CharField(max_length=100, blank=True, null=True)
@@ -210,4 +213,9 @@ class Report(models.Model):
     customer = models.ForeignKey(Customer,on_delete=models.CASCADE)
     resturant = models.ForeignKey(Resturant,on_delete=models.CASCADE)
     reason = models.TextField()
-    reslove = models.TextField()
+    date = models.DateTimeField(auto_now_add=True)
+    resolved_by = models.ForeignKey(CustomUser,on_delete=models.CASCADE,blank=True,null=True)
+    resolution = models.TextField()
+    resolved_date = models.DateTimeField(null=True,blank=True)
+    is_resolved = models.BooleanField(default=False)
+    

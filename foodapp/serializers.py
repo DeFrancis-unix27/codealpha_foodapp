@@ -15,6 +15,8 @@ from .models import (
     Reservation,
     Notification,
     InviteStaff,
+    Customer,
+    Report
 )
 from django.contrib.auth.hashers import check_password
 
@@ -42,6 +44,7 @@ class RegistrationSerializer(serializers.ModelSerializer):
             user = CustomUser(**validated_data)
             user.set_password(password)
             user.save()
+            Customer.objects.create(user=user7)
         if validated_data.get("confirm_password") != validated_data.get("password"):
             raise serializers.ValidationError("passwords do not match")
         return user
@@ -160,7 +163,7 @@ class OrderSerializer(serializers.ModelSerializer):
         return order
 
 
-class PaymentsSerializer(serializers.ModelSerializer):
+class PaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Payment
         fields = "__all__"
@@ -222,3 +225,9 @@ class InviteStaffSerializer(serializers.ModelSerializer):
                 "only managers and admins can invite staff"
             )
         return attrs
+
+
+class ReportSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Report
+        fields = "__all__"
