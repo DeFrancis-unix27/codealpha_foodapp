@@ -705,3 +705,128 @@ class ReadyKitchenView(generics.UpdateAPIView):
         if self.request.user.role != "chef" and serializer.validated_data['order'].table.resturant.owner != self.request.user:
             raise PermissionDenied("action can only be performed by chefs or resturant managers")
         serializer.save(status="ready", chef=self.request.user)
+
+class PreparingKitchenView(generics.UpdateAPIView):
+    queryset = KitchenOrder.objects.all()
+    serializer_class = KitchenOrderSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_update(self, serializer):
+        status = serializer.validated_data.get("status")
+        if status == "preparing":
+            raise ValidationError("kitchen is already preparing")
+        if self.request.user.role != "chef" and serializer.validated_data['order'].table.resturant.owner != self.request.user:
+            raise PermissionDenied("action can only be performed by chefs or resturant managers")
+        serializer.save(status="preparing", chef=self.request.user)
+
+class CreateInventoryView(generics.CreateAPIView):
+    queryset = Inventory.objects.all()
+    serializer_class = InventorySerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        if self.request.user.role != "manager" and serializer.validated_data['resturant'].owner != self.request.user:
+            raise PermissionDenied("action can only be performed by managers")
+        serializer.save(owner=self.request.user)
+
+class ListInventoryView(generics.ListAPIView):
+    queryset = Inventory.objects.all()
+    serializer_class = InventorySerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        if self.request.user.role == "manager":
+            return Inventory.objects.filter(resturant__owner=self.request.user)
+        else:
+            raise PermissionDenied("you are not allowed to view this inventory")
+
+class RetrieveInventoryView(generics.RetrieveAPIView):
+    queryset = Inventory.objects.all()
+    serializer_class = InventorySerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        if self.request.user.role == "manager":
+            return Inventory.objects.filter(resturant__owner=self.request.user)
+        else:
+            raise PermissionDenied("you are not allowed to view this inventory")
+
+class UpdateInventoryView(generics.UpdateAPIView):
+    queryset = Inventory.objects.all()
+    serializer_class = InventorySerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_update(self, serializer):
+        if self.request.user.role != "manager" and serializer.validated_data['resturant'].owner != self.request.user:
+            raise PermissionDenied("action can only be performed by managers")
+        serializer.save(owner=self.request.user)
+
+class DestroyInventoryView(generics.DestroyAPIView):
+    queryset = Inventory.objects.all()
+    serializer_class = InventorySerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_destroy(self, serializer):
+        if self.request.user.role != "manager" and serializer.validated_data['resturant'].owner != self.request.user:
+            raise PermissionDenied("action can only be performed by managers")
+        serializer.save(owner=self.request.user)
+
+class CreateInventoryTransactionView(generics.CreateAPIView):
+    queryset = InventoryTransaction.objects.all()
+    serializer_class = InventoryTransactionSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        if self.request.user.role != "manager" and serializer.validated_data['inventory'].resturant.owner != self.request.user:
+            raise PermissionDenied("action can only be performed by managers")
+        serializer.save(performed_by=self.request.user)
+
+class ListInventoryTransactionView(generics.ListAPIView):
+    queryset = InventoryTransaction.objects.all()
+    serializer_class = InventoryTransactionSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        if self.request.user.role == "manager":
+            return InventoryTransaction.objects.filter(inventory__resturant__owner=self.request.user)
+        else:
+            raise PermissionDenied("you are not allowed to view this inventory transaction")
+        
+class RetrieveInventoryTransactionView(generics.RetrieveAPIView):
+    queryset = InventoryTransaction.objects.all()
+    serializer_class = InventoryTransactionSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        if self.request.user.role == "manager":
+            return InventoryTransaction.objects.filter(inventory__resturant__owner=self.request.user)
+        else:
+            raise PermissionDenied("you are not allowed to view this inventory transaction")
+
+
+class CreateReviewView(generics.CreateAPIView):
+    queryset = Review.objects.all()
+    serializer_class = ReviewSerializer
+    permission_classes = [IsAuthenticated]
+
+
+class ListReviewView(generics.ListAPIView):
+    queryset = Review.objects.all()
+    serializer_class = ReviewSerializer
+    permission_classes = [IsAuthenticated]
+
+class RetrieveReviewView(generics.RetrieveAPIView):
+    queryset = Review.objects.all()
+    serializer_class = ReviewSerializer
+    permission_classes = [IsAuthenticated]
+
+class DestroyReviewView(generics.DestroyAPIView):
+    queryset = Review.objects.all()
+    serializer_class = ReviewSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        review = get_object_or_404(Review, id=self.kwargs['pk'])
+        if self.request.user != review.resturant.owner:
+            raise PermissionDenied("you are not allowed to delete this review")
+        return Review.objects.filter(customer=self.request.user.customer)
