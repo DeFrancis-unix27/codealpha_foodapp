@@ -75,9 +75,10 @@ class Category(models.Model):
     description = models.TextField()
 
 class MenuItem(models.Model):
+    resturant = models.ForeignKey(Resturant, on_delete=models.CASCADE)
     category = models.ForeignKey(Category,on_delete=models.CASCADE)
     name = models.CharField(max_length=40)
-    chef = models.ForeignKey(InviteStaff, on_delete=models.CASCADE)
+    chef = models.ForeignKey(InviteStaff, on_delete=models.CASCADE,null=True, blank=True)
     description = models.TextField()
     price = models.DecimalField(decimal_places=2, max_digits=10)
     image = models.ImageField(upload_to="menu/")
@@ -138,7 +139,7 @@ class Order(models.Model):
     order_type = models.CharField(max_length=50, choices=ORDER_TYPE, default="dine-in")
 
 class OrderItem(models.Model):
-    order = models.ForeignKey(Order, on_delete=models.CASCADE)
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="orderitem")
     menu_item = models.ForeignKey(MenuItem, on_delete=models.CASCADE)
     quantity = models.IntegerField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
@@ -162,7 +163,7 @@ class Payment(models.Model):
     resturant = models.ForeignKey(Resturant, on_delete=models.CASCADE)
     payment_method = models.CharField(max_length=50, choices=PAYMENT_METHODS)
     status = models.CharField(max_length=50, choices=STATUS, default="pending")
-    transaction_id = models.CharField(max_length=100, blank=True, null=True)
+    transaction_id = models.UUIDField(default=uuid.uuid4, blank=True, null=True)
 
 class KitchenOrder(models.Model):
     STATUS = [

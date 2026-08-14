@@ -33,9 +33,9 @@ class RegistrationSerializer(serializers.ModelSerializer):
             "email",
             "password",
             "phone_number",
-            "role",
             "confirm_password",
         ]
+        read_only_fields = ["role"]
 
     def create(self, validated_data):
         if validated_data.get("confirm_password") == validated_data.get("password"):
@@ -44,7 +44,7 @@ class RegistrationSerializer(serializers.ModelSerializer):
             user = CustomUser(**validated_data)
             user.set_password(password)
             user.save()
-            Customer.objects.create(user=user7)
+            Customer.objects.create(user=user)
         if validated_data.get("confirm_password") != validated_data.get("password"):
             raise serializers.ValidationError("passwords do not match")
         return user
@@ -70,7 +70,16 @@ class LoginSerializer(serializers.Serializer):
 class ResturantSerializer(serializers.ModelSerializer):
     class Meta:
         model = Resturant
-        fields = "__all__"
+        fields =[
+            "name",
+            "description",
+            "logo",
+            "location",
+            "email",
+            "opening_time",
+            "closing_time"
+        ]
+        read_only_fields = ["owner"]
 
     def validate(self, attrs):
         if attrs.get("owner").role != "manager":
@@ -81,19 +90,37 @@ class ResturantSerializer(serializers.ModelSerializer):
 class TableSerializer(serializers.ModelSerializer):
     class Meta:
         model = Table
-        fields = "__all__"
+        fields = [
+            "table_number",
+            "capacity",
+            "state"
+        ]
+        read_only_fields =["resturant"]
 
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
-        fields = "__all__"
+        fields = [
+            "name",
+            "description"
+        ]
+        read_only_fields = ["resturant"]
 
 
 class MenuItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = MenuItem
-        fields = "__all__"
+        fields = [
+            "name",
+            "description",
+            "price",
+            "image",
+            "preparation_time",
+            "category",
+            "is_available"
+        ]
+        read_only_fields = ["resturant","chef"]
 
 
 class ReservationSerializer(serializers.ModelSerializer):
@@ -106,10 +133,11 @@ class OrderItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = OrderItem
         fields = ["menu_item", "quantity"]
+        read_only_fields = ["price","subtotal"]
 
 
 class OrderSerializer(serializers.ModelSerializer):
-    orderItem = OrderItemSerializer(many=True)
+    orderItem = OrderItemSerializer(many=True, write_only=True)
 
     class Meta:
         model = Order
@@ -123,7 +151,7 @@ class OrderSerializer(serializers.ModelSerializer):
             "orderItem",
             "status",
         ]
-        read_only = ["order_number", "status", "total_price", "order_time"]
+        read_only_fields = ["order_number", "status", "total_price", "order_time"]
 
     def validate(self, attrs):
         waiter = attrs.get("waiter")
@@ -167,7 +195,7 @@ class PaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Payment
         fields = "__all__"
-
+        read_only_fields = ["sender","status","resturant","transaction_id"]
 
 class KitchenOrderSerializer(serializers.ModelSerializer):
     class Meta:
@@ -185,6 +213,7 @@ class InventorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Inventory
         fields = "__all__"
+        read_only_fields = ["resturant"]
 
 
 class InventoryTransactionSerializer(serializers.ModelSerializer):
@@ -205,24 +234,26 @@ class ReviewSerializer(serializers.ModelSerializer):
     class Meta:
         model = Review
         fields = "__all__"
-
+        read_only_fields = ["customer","resturant"]
 
 class NotificationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Notification
         fields = "__all__"
+        read_only_fields = ["user","is_read"]
 
 
 class InviteStaffSerializer(serializers.ModelSerializer):
     class Meta:
         model = InviteStaff
         fields = "__all__"
+        read_only_fields = ["invited_by","status","accepted_at"]
 
     def validate(self, attrs):
         inviter = attrs.get("invited_by")
-        if inviter.role != "manager" or inviter.role != "admin":
+        if inviter.role != "manager":
             raise serializers.ValidationError(
-                "only managers and admins can invite staff"
+                "only managers can invite staff"
             )
         return attrs
 
@@ -231,3 +262,4 @@ class ReportSerializer(serializers.ModelSerializer):
     class Meta:
         model = Report
         fields = "__all__"
+        read_only_fields = ["customer","resturant","is_resloved","resturant","resloved_date","resolution"]
