@@ -9,7 +9,7 @@ class CustomUser(AbstractUser):
         ("customer","Customer"),
         ("admin","Admin")
     ]
-    id = models.UUIDField(primary_key=True,unique=True,editable=True)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     role = models.CharField(max_length=50,choices=ROLES,default="customer")
     phone_number = models.CharField(max_length=30,blank=True,null=True)
 
@@ -52,8 +52,8 @@ class InviteStaff(models.Model):
     Staff = models.ForeignKey(CustomUser,on_delete=models.CASCADE, related_name="staff")
     status = models.CharField(choices=STATUS,max_length=40,default="pending")
     role = models.CharField(choices=ROLE,max_length=40,default="waiter")
-    accepted_at = models.DateTimeField()
-    expiring = models.DateTimeField()
+    accepted_at = models.DateTimeField(null=True,blank=True)
+    expiring = models.DateTimeField(null=True,blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     message = models.TextField()
 
@@ -81,15 +81,15 @@ class MenuItem(models.Model):
     chef = models.ForeignKey(InviteStaff, on_delete=models.CASCADE,null=True, blank=True)
     description = models.TextField()
     price = models.DecimalField(decimal_places=2, max_digits=10)
-    image = models.ImageField(upload_to="menu/")
+    image = models.ImageField(upload_to="menu/",null=True,blank=True)
     preparation_time = models.TimeField()
-    is_avaiable =models.BooleanField(default=False)
+    is_available =models.BooleanField(default=False)
 
 class Customer(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
     username = models.CharField(max_length=30)
     email = models.EmailField()
-    point = models.IntegerField()
+    point = models.IntegerField(null=True,blank=True)
 
     def save(self,*args, **kwargs):
         try:

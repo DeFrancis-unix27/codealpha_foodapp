@@ -1,41 +1,18 @@
 # Project Problems and Fixes Needed
 
-## 1. Missing Django secret key
-- The project cannot start because Django raises:
-  `django.core.exceptions.ImproperlyConfigured: The SECRET_KEY setting must not be empty.`
-- This must be configured in `food_store/settings.py` before the app can run.
+## FIXED ISSUES (Completed)
+✅ Missing Django SECRET_KEY - now using os.getenv() in settings.py
+✅ URL file incomplete - all routes added and aligned
+✅ View class name typos - fixed RetriveAPIView, DestoryAPIView
+✅ CreateOrderView logic - variable ordering fixed
+✅ UpdateOrderView - added missing serializer.save()
+✅ RetrieveOrderView - fixed get_queryset(self) signature
+✅ Cancel_Order_View - fixed order.order_number reference
+✅ URLs syntax error - added missing comma
 
-## 2. URL file is incomplete
-- The app has many view classes defined in `foodapp/views.py`, but the route list in `foodapp/urls.py` was missing several endpoints.
-- Required sections included table, reservation, report, payment, kitchen, inventory, and review routes.
+## REMAINING ISSUES
 
-## 3. View class names are inconsistent and misspelled
-Examples:
-- `RetriveResturantView` should be `RetrieveResturantView`
-- `RetriveInviteStaffView` should be `RetrieveInviteStaffView`
-- `DestoryCategoryView` should be `DestroyCategoryView`
-- `DestroyReservationView` should be a proper destroy view class name
-- `cancelOrderView` is inconsistent with the naming pattern used elsewhere
-
-## 4. Some view logic is incorrect
-Examples from `foodapp/views.py`:
-- `CreateOrderView` contains a bad assignment:
-  `chef = serializer.validated_data.get("waiter").role = "chef"`
-- This is not valid logic and overwrites the waiter role incorrectly.
-
-- In `UpdateOrderView`, the permission check is wrong:
-  `if (self.request.user != waiter.Staff or self.request.user != table.resturant.owner):`
-  This references fields that do not match the model definitions consistently.
-
-- In `RetrieveOrderView`, the method signature is not standard:
-  `def get_queryset(self, serializer):` 
-  Django expects `get_queryset(self)` without extra arguments.
-
-## 5. Wrong serializer / attribute references
-- Several views access attributes like `waiter.Staff`, `table.resturant`, and `order.number` that may not exist as intended.
-- There are mismatches between model field names and attribute names used in conditions and notifications.
-
-## 6. Some model and field names are inconsistent
+## 1. Some model and field names are inconsistent
 Examples:
 - `Resturant` is used throughout, but the app sometimes uses `Restaurant` naming in discussion and route naming.
 - `InviteStaff` field names `Resturant`, `Staff`, and `invited_by` are inconsistently capitalized and may not match expected conventions.

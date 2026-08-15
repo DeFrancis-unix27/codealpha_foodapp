@@ -16,12 +16,13 @@ from .models import (
     Notification,
     InviteStaff,
     Customer,
-    Report
+    Report,
 )
 from django.contrib.auth.hashers import check_password
 
 
 class RegistrationSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True)
     confirm_password = serializers.CharField(write_only=True)
 
     class Meta:
@@ -30,23 +31,32 @@ class RegistrationSerializer(serializers.ModelSerializer):
             "first_name",
             "last_name",
             "username",
+            "role",
             "email",
             "password",
             "phone_number",
             "confirm_password",
         ]
-        read_only_fields = ["role"]
+
+    def validate(self, attrs):
+        password = attrs.get("password")
+        confirm_password = attrs.get("confirm_password")
+
+        if password != confirm_password:
+            raise serializers.ValidationError(
+                {"confirm_password": "Passwords do not match."}
+            )
+
+        return attrs
 
     def create(self, validated_data):
-        if validated_data.get("confirm_password") == validated_data.get("password"):
-            validated_data.pop("confirm_password")
-            password = validated_data.pop("password")
-            user = CustomUser(**validated_data)
-            user.set_password(password)
-            user.save()
-            Customer.objects.create(user=user)
-        if validated_data.get("confirm_password") != validated_data.get("password"):
-            raise serializers.ValidationError("passwords do not match")
+        validated_data.pop("confirm_password")
+        password = validated_data.pop("password")
+
+        user = CustomUser(**validated_data)
+        user.set_password(password)
+        user.save()
+        Customer.objects.create(user=user)
         return user
 
 
@@ -70,42 +80,39 @@ class LoginSerializer(serializers.Serializer):
 class ResturantSerializer(serializers.ModelSerializer):
     class Meta:
         model = Resturant
-        fields =[
+        fields = [
+            "owner",
             "name",
             "description",
             "logo",
             "location",
             "email",
             "opening_time",
-            "closing_time"
+            "closing_time",
         ]
-        read_only_fields = ["owner"]
 
     def validate(self, attrs):
-        if attrs.get("owner").role != "manager":
-            raise serializers.ValidationError("only manager's can create Resturant")
+        owner = attrs.get("owner")
+        if owner is None:
+            raise serializers.ValidationError({"owner": "Owner is required."})
+
+        if getattr(owner, "role", None) != "manager":
+            raise serializers.ValidationError(
+                {"owner": "Only managers can perform this action."}
+            )
         return attrs
 
 
 class TableSerializer(serializers.ModelSerializer):
     class Meta:
         model = Table
-        fields = [
-            "table_number",
-            "capacity",
-            "state"
-        ]
-        read_only_fields =["resturant"]
+        fields = ["resturant", "table_number", "capacity", "state"]
 
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
-        fields = [
-            "name",
-            "description"
-        ]
-        read_only_fields = ["resturant"]
+        fields = ["resturant", "name", "description"]
 
 
 class MenuItemSerializer(serializers.ModelSerializer):
@@ -118,9 +125,9 @@ class MenuItemSerializer(serializers.ModelSerializer):
             "image",
             "preparation_time",
             "category",
-            "is_available"
+            "is_available",
         ]
-        read_only_fields = ["resturant","chef"]
+        read_only_fields = ["resturant", "chef"]
 
 
 class ReservationSerializer(serializers.ModelSerializer):
@@ -133,11 +140,11 @@ class OrderItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = OrderItem
         fields = ["menu_item", "quantity"]
-        read_only_fields = ["price","subtotal"]
+        read_only_fields = ["price", "subtotal"]
 
 
 class OrderSerializer(serializers.ModelSerializer):
-    orderItem = OrderItemSerializer(many=True, write_only=True)
+    orderItem = OrderItemSerializer(many=True, write_only=True, required=False)
 
     class Meta:
         model = Order
@@ -149,45 +156,70 @@ class OrderSerializer(serializers.ModelSerializer):
             "status",
             "order_type",
             "orderItem",
-            "status",
         ]
-        read_only_fields = ["order_number", "status", "total_price", "order_time"]
+        read_only_fields = [
+            "order_number",
+            "status",
+            "total_price",
+            "order_time",
+        ]
 
     def validate(self, attrs):
         waiter = attrs.get("waiter")
-        rest_table = attrs.get("table").resturant
-        if (
-            waiter.role != "waiter"
-            and waiter.status != "accepted"
-            and waiter.Resturant != rest_table
-        ):
+        table = attrs.get("table")
+
+        if not waiter:
+            raise serializers.ValidationError({"waiter": "A waiter is required."})
+
+        if not table:
+            raise serializers.ValidationError({"table": "A table is required."})
+
+        # Check table availability
+        if table.state != "available":
             raise serializers.ValidationError(
-                "this role is required by only waiters that has been assigned to the resturant "
+                {"table": "Table is not available at the moment."}
             )
-        elif waiter != rest_table.owner:
+
+        # Check waiter
+        if waiter.role != "waiter":
             raise serializers.ValidationError(
-                "this role is required by only waiters and the resturant manager"
+                {"waiter": "The selected user is not a waiter."}
             )
-        if attrs.get("table") != "available":
-            raise serializers.ValidationError("Table in availble at the moment")
-        if attrs.get("orderItem").order.order_number != attrs.get("order_number"):
-            raise serializers.ValidationError("order item doesn't belong to this Order")
+
+        if waiter.status != "accepted":
+            raise serializers.ValidationError(
+                {"waiter": "The waiter has not been accepted."}
+            )
+
+        if waiter.Resturant != table.resturant:
+            raise serializers.ValidationError(
+                {"waiter": "The waiter is not assigned to this restaurant."}
+            )
+
         return attrs
 
     def create(self, validated_data):
-        items = validated_data.pop("orderItem")
+        items = validated_data.pop("orderItem", [])
+
         total = sum(item["menu_item"].price * item["quantity"] for item in items)
+
         order = Order.objects.create(**validated_data, total_price=total)
+
         for item in items:
+            price = item["menu_item"].price
+            quantity = item["quantity"]
+
             OrderItem.objects.create(
                 order=order,
                 menu_item=item["menu_item"],
-                quantity=item["quantity"],
-                price=item["menu_item"].price,
-                subtotal=item["menu_item"].price * item["quantity"],
+                quantity=quantity,
+                price=price,
+                subtotal=price * quantity,
             )
+
         order.table.state = "occupied"
-        order.table.save()
+        order.table.save(update_fields=["state"])
+
         return order
 
 
@@ -195,7 +227,8 @@ class PaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Payment
         fields = "__all__"
-        read_only_fields = ["sender","status","resturant","transaction_id"]
+        read_only_fields = ["sender", "status", "resturant", "transaction_id"]
+
 
 class KitchenOrderSerializer(serializers.ModelSerializer):
     class Meta:
@@ -234,27 +267,24 @@ class ReviewSerializer(serializers.ModelSerializer):
     class Meta:
         model = Review
         fields = "__all__"
-        read_only_fields = ["customer","resturant"]
+        read_only_fields = ["customer", "resturant"]
+
 
 class NotificationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Notification
         fields = "__all__"
-        read_only_fields = ["user","is_read"]
 
 
 class InviteStaffSerializer(serializers.ModelSerializer):
     class Meta:
         model = InviteStaff
         fields = "__all__"
-        read_only_fields = ["invited_by","status","accepted_at"]
 
     def validate(self, attrs):
         inviter = attrs.get("invited_by")
         if inviter.role != "manager":
-            raise serializers.ValidationError(
-                "only managers can invite staff"
-            )
+            raise serializers.ValidationError("only managers can invite staff")
         return attrs
 
 
@@ -262,4 +292,11 @@ class ReportSerializer(serializers.ModelSerializer):
     class Meta:
         model = Report
         fields = "__all__"
-        read_only_fields = ["customer","resturant","is_resloved","resturant","resloved_date","resolution"]
+        read_only_fields = [
+            "customer",
+            "resturant",
+            "is_resloved",
+            "resturant",
+            "resloved_date",
+            "resolution",
+        ]

@@ -1,0 +1,502 @@
+### Food Store API - Complete API Reference
+### Base URL: http://127.0.0.1:8000/api/
+
+
+@customer_Bearer_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzg2NzU5MzIwLCJpYXQiOjE3ODY3NTc1MjAsImp0aSI6ImM2ODE1M2U3YjU5NTRkNjBiYTkxOWYxZDEwOWUxODA4IiwidXNlcl9pZCI6ImRmNGNlMjZlLTMxNjQtNDlhNy1iNzVmLTUwNzEyZGZlNzNlZSJ9.C8OSd42DoPa8mT5J7m3QBBTHthK0ijAoMdCsBIpFm6k
+@manager_Bearer_token="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzg2NzU4NDQ3LCJpYXQiOjE3ODY3NTY2NDcsImp0aSI6IjEzZDVmOTQzMjQwMjRjMmJhM2E0MmE3YjJhMDM5NjM5IiwidXNlcl9pZCI6ImVhZjk1YzMzLTIxNDAtNDNkNS04YjAwLWRhNDg0NjJmNDFlYSJ9.RTr4Du7yfcxGY8S6VDjdhZMOdszHC3rgfNV84wXizoc
+
+@manager_uuid=eaf95c33214043d58b00da48462f41ea
+
+@customer_uuid=df4ce26e316449a7b75f50712dfe73ee
+### ============================================
+### AUTHENTICATION ENDPOINTS
+### ============================================
+
+### Register a new user
+POST http://127.0.0.1:8000/api/register/
+Content-Type: application/json
+
+{
+  "first_name":"jack",
+  "last_name":"pupil",
+  "username": "oliva",
+  "email": "keliven@gmail.com",
+  "password": "davenlab",
+  "confirm_password":"davenlab",
+  "role": "manager",
+  "phone_number":"09045439303"
+}
+
+### Login (Get JWT Token)
+POST http://127.0.0.1:8000/api/login/
+Content-Type: application/json
+
+{
+  "username": "pope",
+  "password": "davenlab"
+}
+
+### Logout
+POST http://127.0.0.1:8000/api/logout/
+Content-Type: application/json
+Authorization: Bearer YOUR_TOKEN_HERE
+
+{
+}
+
+### Delete Account
+POST http://127.0.0.1:8000/api/delacc/
+Authorization: Bearer YOUR_TOKEN_HERE
+
+### ============================================
+### RESTAURANT ENDPOINTS
+### ============================================
+
+### Create Restaurant (Manager only)
+POST http://127.0.0.1:8000/api/create_resturant/
+Content-Type: application/json
+Authorization: Bearer {{manager_Bearer_token}}
+
+{
+  "owner":"{{manager_uuid}}",
+  "name": "Pizza Palace",
+  "description": "Best pizza in town",
+  "location": "123 Main St",
+  "email": "contact@pizzapalace.com",
+  "opening_time": "09:00:00",
+  "closing_time": "22:00:00"
+}
+
+### List All Restaurants
+GET http://127.0.0.1:8000/api/list_resturant/
+
+### Retrieve Restaurant Details
+GET http://127.0.0.1:8000/api/retrive_resturant/1/
+Authorization: Bearer {{manager_Bearer_token}}
+
+### Update Restaurant
+PUT http://127.0.0.1:8000/api/update_resturant/1/
+Content-Type: application/json
+Authorization: Bearer {{manager_Bearer_token}}
+
+{
+  "name": "Pizza Palace Updated",
+  "opening_time": "10:00:00"
+}
+
+### Delete Restaurant
+DELETE http://127.0.0.1:8000/api/delete_resturant/1/
+Authorization: Bearer YOUR_TOKEN_HERE
+
+### ============================================
+### STAFF INVITATION ENDPOINTS
+### ============================================
+
+### Create Staff Invite
+POST http://127.0.0.1:8000/api/create_invitestaff/
+Content-Type: application/json
+Authorization: Bearer {{manager_Bearer_token}}
+
+{
+  "Resturant": 1,
+  "invited_by":"{{manager_uuid}}",
+  "Staff": "{{customer_uuid}}",
+  "role": "waiter",
+  "message": "Join our team as a chef",
+  "expiring":"2026-12-20"
+}
+
+### List Staff Invites
+GET http://127.0.0.1:8000/api/list_invitestaff/
+Authorization: Bearer {{customer_Bearer_token}}
+
+### Retrieve Invite Details
+GET http://127.0.0.1:8000/api/retrive_invitestaff/1/
+Authorization: Bearer {{customer_Bearer_token}}
+
+### Accept Invite
+POST http://127.0.0.1:8000/api/accept_invite/cb092abc-b528-434f-9019-04452f659a28/
+Authorization: Bearer {{customer_Bearer_token}}
+
+### Reject Invite
+POST http://127.0.0.1:8000/api/reject_invite/0acf0835-360f-40bd-8c26-9dde98381fdb/
+Authorization: Bearer YOUR_TOKEN_HERE
+
+### Delete Invite
+DELETE http://127.0.0.1:8000/api/delete_invitestaff/1/
+Authorization: Bearer YOUR_TOKEN_HERE
+
+### ============================================
+### CATEGORY ENDPOINTS
+### ============================================
+
+### Create Category
+POST http://127.0.0.1:8000/api/create_category/
+Content-Type: application/json
+Authorization: Bearer {{manager_Bearer_token}}
+
+{
+  "resturant": 1,
+  "name": "Beans",
+  "description": "Fresh homemade Beans"
+}
+
+### List Categories
+GET http://127.0.0.1:8000/api/list_category/
+Authorization: Bearer {{manager_Bearer_token}}
+
+### Retrieve Category
+GET http://127.0.0.1:8000/api/retrive_category/1/
+
+### Update Category
+PUT http://127.0.0.1:8000/api/update_category/1/
+Content-Type: application/json
+Authorization: Bearer YOUR_TOKEN_HERE
+
+{
+  "name": "Gourmet Pizzas"
+}
+
+### Delete Category
+DELETE http://127.0.0.1:8000/api/delete_category/1/
+Authorization: Bearer YOUR_TOKEN_HERE
+
+### ============================================
+### MENU ITEM ENDPOINTS
+### ============================================
+
+### Create Menu Item
+POST http://127.0.0.1:8000/api/create_menu_item/
+Content-Type: application/json
+Authorization: Bearer {{manager_Bearer_token}}
+
+{
+  "resturant": 1,
+  "category": 1,
+  "name": "Margherita Pizza",
+  "image":null,
+  "description": "Tomato, mozzarella, and basil",
+  "price": "12.99",
+  "preparation_time": "15:00",
+  "is_available": true
+}
+
+### List Menu Items
+GET http://127.0.0.1:8000/api/list_menu_item/
+Authorization: Bearer {{manager_Bearer_token}}
+
+### Retrieve Menu Item
+GET http://127.0.0.1:8000/api/retrive_menu_item/1/
+
+### Update Menu Item
+PUT http://127.0.0.1:8000/api/update_menu_item/1/
+Content-Type: application/json
+Authorization: Bearer YOUR_TOKEN_HERE
+
+{
+  "price": "13.99"
+}
+
+### Delete Menu Item
+DELETE http://127.0.0.1:8000/api/delete_menu_item/1/
+Authorization: Bearer YOUR_TOKEN_HERE
+
+### ============================================
+### TABLE ENDPOINTS
+### ============================================
+
+### Create Table
+POST http://127.0.0.1:8000/api/create_table/
+Content-Type: application/json
+Authorization: Bearer {{manager_Bearer_token}}
+
+{
+  "resturant": 1,
+  "table_number": 2,
+  "capacity": 4,
+  "state": "available"
+}
+
+### List Tables
+GET http://127.0.0.1:8000/api/list_table/
+Authorization: Bearer {{customer_Bearer_token}}
+
+### Retrieve Table
+GET http://127.0.0.1:8000/api/retrive_table/1/
+
+### Update Table
+PUT http://127.0.0.1:8000/api/update_table/1/
+Content-Type: application/json
+Authorization: Bearer YOUR_TOKEN_HERE
+
+{
+  "state": "occupied"
+}
+
+### Delete Table
+DELETE http://127.0.0.1:8000/api/delete_table/1/
+Authorization: Bearer YOUR_TOKEN_HERE
+
+### ============================================
+### RESERVATION ENDPOINTS
+### ============================================
+
+### Create Reservation
+POST http://127.0.0.1:8000/api/create_reservation/
+Content-Type: application/json
+
+{
+  "customer": 2,
+  "table": 1,
+  "reservation_time": "2026-08-15T19:00:00Z",
+  "number_of_people": 4,
+  "guest_name": "John Smith",
+  "special_requests": "Window seat preferred"
+}
+
+### List Reservations
+GET http://127.0.0.1:8000/api/list_reservation/
+Authorization: Bearer {{customer_Bearer_token}}
+
+### Retrieve Reservation
+GET http://127.0.0.1:8000/api/retrive_reservation/1/
+Authorization: Bearer YOUR_TOKEN_HERE
+
+### Delete/Cancel Reservation
+DELETE http://127.0.0.1:8000/api/delete_reservation/1/
+Authorization: Bearer YOUR_TOKEN_HERE
+
+### ============================================
+### ORDER ENDPOINTS
+### ============================================
+
+### Create Order
+POST http://127.0.0.1:8000/api/create_order/
+Content-Type: application/json
+Authorization: Bearer {{customer_Bearer_token}}
+
+{
+  "customer": 1,
+  "table": 1,
+  "waiter": "df4ce26e-3164-49a7-b75f-50712dfe73ee",
+  "total_price": "25.98",
+  "status": "pending",
+  "order_type": "dine-in"
+}
+
+### List Orders
+GET http://127.0.0.1:8000/api/list_order/
+Authorization: Bearer YOUR_TOKEN_HERE
+
+### Retrieve Order
+GET http://127.0.0.1:8000/api/retrive_order/1/
+Authorization: Bearer YOUR_TOKEN_HERE
+
+### Update Order
+PUT http://127.0.0.1:8000/api/update_order/1/
+Content-Type: application/json
+Authorization: Bearer YOUR_TOKEN_HERE
+
+{
+  "status": "preparing"
+}
+
+### Cancel Order
+POST http://127.0.0.1:8000/api/cancel_order/1/
+Authorization: Bearer YOUR_TOKEN_HERE
+
+### Deliver Order
+POST http://127.0.0.1:8000/api/deliver_order/1/
+Authorization: Bearer YOUR_TOKEN_HERE
+
+### ============================================
+### REPORT ENDPOINTS
+### ============================================
+
+### Create Report
+POST http://127.0.0.1:8000/api/create_report/
+Content-Type: application/json
+Authorization: Bearer YOUR_TOKEN_HERE
+
+{
+  "resturant": 1,
+  "title": "Quality Issue",
+  "subject": "Food was cold",
+  "description": "The pizza arrived cold"
+}
+
+### List Reports
+GET http://127.0.0.1:8000/api/list_report/
+Authorization: Bearer YOUR_TOKEN_HERE
+
+### Retrieve Report
+GET http://127.0.0.1:8000/api/retrive_report/1/
+Authorization: Bearer YOUR_TOKEN_HERE
+
+### Resolve Report
+POST http://127.0.0.1:8000/api/resolve_report/1/
+Content-Type: application/json
+Authorization: Bearer YOUR_TOKEN_HERE
+
+{
+  "resolution": "We replaced the pizza with a fresh one"
+}
+
+### ============================================
+### NOTIFICATION ENDPOINTS
+### ============================================
+
+### List User Notifications
+GET http://127.0.0.1:8000/api/list_notification/
+Authorization: Bearer {{manager_Bearer_token}}
+
+### Retrieve Notification
+GET http://127.0.0.1:8000/api/retrive_notification/1/
+Authorization: Bearer YOUR_TOKEN_HERE
+
+### Mark Notification as Read
+POST http://127.0.0.1:8000/api/read_notification/1/
+Authorization: Bearer YOUR_TOKEN_HERE
+
+### ============================================
+### PAYMENT ENDPOINTS
+### ============================================
+
+### Create Payment
+POST http://127.0.0.1:8000/api/create_payment/
+Content-Type: application/json
+Authorization: Bearer YOUR_TOKEN_HERE
+
+{
+  "order": 1,
+  "amount": "25.98",
+  "payment_method": "credit_card"
+}
+
+### List Payments
+GET http://127.0.0.1:8000/api/list_payment/
+Authorization: Bearer YOUR_TOKEN_HERE
+
+### Retrieve Payment
+GET http://127.0.0.1:8000/api/retrive_payment/1/
+Authorization: Bearer YOUR_TOKEN_HERE
+
+### ============================================
+### KITCHEN ENDPOINTS
+### ============================================
+
+### Create Kitchen Order
+POST http://127.0.0.1:8000/api/create_kitchen/
+Content-Type: application/json
+Authorization: Bearer YOUR_TOKEN_HERE
+
+{
+  "order": 1,
+  "chef": 1,
+  "status": "pending",
+  "preparation_time": "15:00"
+}
+
+### List Kitchen Orders
+GET http://127.0.0.1:8000/api/list_kitchen/
+Authorization: Bearer YOUR_TOKEN_HERE
+
+### Retrieve Kitchen Order
+GET http://127.0.0.1:8000/api/retrive_kitchen/1/
+Authorization: Bearer YOUR_TOKEN_HERE
+
+### Mark Kitchen Order as Preparing
+PUT http://127.0.0.1:8000/api/preparing_kitchen/1/
+Content-Type: application/json
+Authorization: Bearer YOUR_TOKEN_HERE
+
+{
+  "status": "preparing"
+}
+
+### Mark Kitchen Order as Ready
+PUT http://127.0.0.1:8000/api/ready_kitchen/1/
+Content-Type: application/json
+Authorization: Bearer YOUR_TOKEN_HERE
+
+{
+  "status": "ready"
+}
+
+### Cancel Kitchen Order
+PUT http://127.0.0.1:8000/api/cancel_kitchen/1/
+Content-Type: application/json
+Authorization: Bearer YOUR_TOKEN_HERE
+
+{
+  "status": "cancelled"
+}
+
+### Delete Kitchen Order
+DELETE http://127.0.0.1:8000/api/delete_kitchen/1/
+Authorization: Bearer YOUR_TOKEN_HERE
+
+### ============================================
+### INVENTORY ENDPOINTS
+### ============================================
+
+### Create Inventory Item
+POST http://127.0.0.1:8000/api/create_inventory/
+Content-Type: application/json
+Authorization: Bearer YOUR_TOKEN_HERE
+
+{
+  "resturant": 1,
+  "item_name": "Tomato Sauce",
+  "quantity": 100,
+  "unit": "kg"
+}
+
+### List Inventory
+GET http://127.0.0.1:8000/api/list_inventory/
+Authorization: Bearer YOUR_TOKEN_HERE
+
+### Retrieve Inventory Item
+GET http://127.0.0.1:8000/api/retrive_inventory/1/
+Authorization: Bearer YOUR_TOKEN_HERE
+
+### Update Inventory
+PUT http://127.0.0.1:8000/api/update_inventory/1/
+Content-Type: application/json
+Authorization: Bearer YOUR_TOKEN_HERE
+
+{
+  "quantity": 80
+}
+
+### ============================================
+### REVIEW ENDPOINTS
+### ============================================
+
+### Create Review
+POST http://127.0.0.1:8000/api/create_review/
+Content-Type: application/json
+Authorization: Bearer YOUR_TOKEN_HERE
+
+{
+  "order": 1,
+  "rating": 5,
+  "comment": "Excellent food and service!"
+}
+
+### List Reviews
+GET http://127.0.0.1:8000/api/list_review/
+
+### Retrieve Review
+GET http://127.0.0.1:8000/api/retrive_review/1/
+
+### ============================================
+### NOTES
+### ============================================
+# 1. Replace YOUR_TOKEN_HERE with actual JWT token from login endpoint
+# 2. Replace numeric IDs with actual resource IDs
+# 3. Dates should be in ISO 8601 format (YYYY-MM-DDTHH:MM:SSZ)
+# 4. Use @variable syntax to store tokens for reuse across requests
+# 5. Manager role required for restaurant operations
+# 6. Chef role required for kitchen operations
+# 7. Customer role required for order and reservation operations

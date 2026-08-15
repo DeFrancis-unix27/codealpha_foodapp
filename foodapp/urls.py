@@ -4,33 +4,35 @@ from . import views
 urlpatterns = [
     path("register/", views.registerView.as_view()),
     path("login/", views.LoginView.as_view()),
+    path('delacc/',views.DeleteAccountView.as_view()),
+    path('logout/',views.LogoutView.as_view()),
 
     # Resturant
     path("create_resturant/", views.CreateResturantView.as_view()),
     path("list_resturant/", views.ListResturantView.as_view()),
     path("update_resturant/<int:pk>/", views.UpdateResturantView.as_view()),
-    path("retrive_resturant/<int:pk>/", views.RetriveResturantView.as_view()),
+    path("retrive_resturant/<int:pk>/", views.RetrieveResturantView.as_view()),
     path("delete_resturant/<int:pk>/", views.DeleteResturantView.as_view()),
 
     # InviteStaff
     path("create_invitestaff/", views.CreateInviteStaffView.as_view()),
     path("list_invitestaff/", views.ListInviteStaffView.as_view()),
-    path("retrive_invitestaff/<int:pk>/", views.RetriveInviteStaffView.as_view()),
-    path("delete_invitestaff/<int:pk>/", views.DeleteInviteStaff.as_view()),
-    path("accept_invite/<int:rest_id>/", views.accept_inviteView.as_view()),
-    path("reject_invite/<int:rest_id>/", views.reject_inviteView.as_view()),
+    path("retrive_invitestaff/<uuid:pk>/", views.RetrieveInviteStaffView.as_view()),
+    path("delete_invitestaff/<uuid:pk>/", views.DeleteInviteStaff.as_view()),
+    path("accept_invite/<uuid:rest_id>/", views.accept_inviteView.as_view()),
+    path("reject_invite/<uuid:rest_id>/", views.reject_inviteView.as_view()),
 
     # Category
     path("create_category/", views.CreateCategoryView.as_view()),
     path("update_category/<int:pk>/", views.UpdateCategoryView.as_view()),
     path("list_category/", views.ListCategoryView.as_view()),
-    path("retrive_category/<int:pk>/", views.RetriveCategoryView.as_view()),
+    path("retrive_category/<int:pk>/", views.RetrieveCategoryView.as_view()),
     path("delete_category/<int:pk>/", views.DestroyCategoryView.as_view()),
 
     # Menu item
     path("create_menu_item/", views.CreateMenuItemView.as_view()),
     path("list_menu_item/", views.ListMenuItemView.as_view()),
-    path("retrive_menu_item/<int:pk>/", views.RetriveMenuItemView.as_view()),
+    path("retrive_menu_item/<int:pk>/", views.RetrieveMenuItemView.as_view()),
     path("update_menu_item/<int:pk>/", views.UpdateMenuItemView.as_view()),
     path("delete_menu_item/<int:pk>/", views.DestroyMenuItemView.as_view()),
 
@@ -39,7 +41,7 @@ urlpatterns = [
     path("list_order/", views.ListOrderView.as_view()),
     path("retrive_order/<int:pk>/", views.RetrieveOrderView.as_view()),
     path("update_order/<int:pk>/", views.UpdateOrderView.as_view()),
-    path("cancel_order/<int:id>/", views.cancelOrderView.as_view()),
+    path("cancel_order/<int:id>/", views.Cancel_Order_View.as_view()),
     path("deliver_order/<int:id>/", views.deliverOrderView.as_view()),
 
     # Table
@@ -69,7 +71,7 @@ urlpatterns = [
     # Payment
     path("create_payment/", views.CreatePaymentView.as_view()),
     path("list_payment/", views.ListPaymentView.as_view()),
-    path("retrive_payment/<int:pk>/", views.RetrivePaymentView.as_view()),
+    path("retrive_payment/<int:pk>/", views.RetrievePaymentView.as_view()),
 
     # Kitchen
     path("create_kitchen/", views.CreateKitchenView.as_view()),

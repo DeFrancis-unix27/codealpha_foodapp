@@ -1,0 +1,12 @@
+{
+  "servers": {
+    "rest-client": {
+      "type": "stdio",
+      "command": "/vscode/bin/linux-x64/a5b500951314efd502d07465bd138dfbd714a960/node",
+      "args": [
+        "/home/codespace/.vscode-remote/extensions/johncole.restclient-mcp-1.5.1/dist/mcp-server.mjs"
+      ],
+      "cwd": "/home/codespace/.vscode-remote/extensions/johncole.restclient-mcp-1.5.1"
+    }
+  }
+}
