@@ -1,5 +1,5 @@
-@customer_Bearer_token=
-@customer_uuid=
+@customer_Bearer_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzg3MTgzMzY4LCJpYXQiOjE3ODcxODE1NjgsImp0aSI6ImU5Y2ZhZDY4OGYxOTRjZjM4NGQzMGIxM2QxOWI4MjBiIiwidXNlcl9pZCI6IjM1NTdlZmNiLTM3NDUtNDI1Yi1hNzI3LTU3N2RhNjY5MjgzZiJ9.O9sbaBD6s7M9tSAffaATnGtkWxYN3rJ4dYfHbLyHck0
+@customer_uuid=3557efcb3745425ba727577da669283f
 
 
 ### Register a new user
@@ -36,7 +36,7 @@ Authorization: Bearer {{customer_Bearer_token}}
 
 
 ### Accept Invite
-POST http://127.0.0.1:8000/api/accept_invite/9361eb19-c645-4772-b6c0-10c228428b71/
+POST http://127.0.0.1:8000/api/accept_invite/b8aa958c-3247-46b9-bf2b-d7b3b5082de9/
 Authorization: Bearer {{customer_Bearer_token}}
 
 ### Reject Invite
@@ -54,7 +54,7 @@ POST http://127.0.0.1:8000/api/create_reservation/
 Content-Type: application/json
 
 {
-  "customer": 2,
+  "customer": 5,
   "table": 1,
   "reservation_time": "2026-08-15T19:00:00Z",
   "number_of_people": 4,
@@ -74,14 +74,14 @@ Content-Type: application/json
 Authorization: Bearer {{customer_Bearer_token}}
 
 {
-  "resturant": 1,
-  "title": "Quality Issue",
-  "subject": "Food was cold",
-  "description": "The rice arrived sour"
+  "customer":5,
+  "resturant": 2,
+  "reason": "The rice arrived sour"
 }
-
+### notifications
 GET http://127.0.0.1:8000/api/list_notification/
 Authorization: Bearer {{customer_Bearer_token}}
 
-POST http://127.0.0.1:8000/api/read_notification/1/
+###
+POST http://127.0.0.1:8000/api/read_notification/29/
 Authorization: Bearer {{customer_Bearer_token}}

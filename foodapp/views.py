@@ -135,12 +135,12 @@ class DeleteResturantView(generics.DestroyAPIView):
     serializer_class = ResturantSerializer
     permission_classes = [IsAuthenticated]
 
-    def perform_destroy(self, serializer):
+    def perform_destroy(self, instance):
         if self.request.user.role != "manager":
             raise PermissionDenied(
                 "action can only be performed by the manger of the resturant"
             )
-        serializer.save(owner=self.request.user)
+        instance.delete()
 
 
 class CreateInviteStaffView(APIView):
@@ -271,7 +271,7 @@ class CreateCategoryView(generics.CreateAPIView):
     def perform_create(self, serializer):
         if (
             self.request.user.role != "manager"
-            and serializer.validated_data["resturant"].owner != self.request.user
+            and serializer.validated_data.get("resturant").owner != self.request.user
         ):
             raise PermissionDenied("action can only be performed by managers")
         serializer.save()
@@ -308,13 +308,13 @@ class DestroyCategoryView(generics.DestroyAPIView):
     serializer_class = CategorySerializer
     permission_classes = [IsAuthenticated]
 
-    def perform_destroy(self, serializer):
+    def perform_destroy(self, instance):
         if (
             self.request.user.role != "manager"
-            and serializer.validated_data["resturant"].owner != self.request.user
+            and instance.validated_data.get("resturant").owner != self.request.user
         ):
             raise PermissionDenied("action can only be performed by managers")
-        serializer.save(owner=self.request.user)
+        instance.delete()
 
 
 class CreateMenuItemView(generics.CreateAPIView):
@@ -375,8 +375,8 @@ class DestroyMenuItemView(generics.DestroyAPIView):
     serializer_class = MenuItemSerializer
     permission_classes = [IsAuthenticated]
 
-    def perform_destroy(self, serializer):
-        restaurant = serializer.instance.resturant
+    def perform_destroy(self, instance):
+        restaurant = instance.resturant
 
         if (
             self.request.user.role != "manager"
@@ -384,7 +384,7 @@ class DestroyMenuItemView(generics.DestroyAPIView):
         ):
             raise PermissionDenied("Your are not approved to perform this action")
 
-        serializer.delete()
+        instance.delete()
 
 
 class CreateOrderView(generics.CreateAPIView):
@@ -596,13 +596,13 @@ class DestroyTableView(generics.DestroyAPIView):
     serializer_class = TableSerializer
     permission_classes = [IsAuthenticated]
 
-    def perform_destroy(self, serializer):
+    def perform_destroy(self, instance):
         if (
             self.request.user.role != "manager"
-            and serializer.validated_data["resturant"].owner != self.request.user
+            and instance.validated_data["resturant"].owner != self.request.user
         ):
             raise PermissionDenied("action can only be performed by managers")
-        serializer.save(owner=self.request.user)
+        instance.delete()
 
 
 class CreateReservationView(generics.CreateAPIView):
@@ -631,7 +631,7 @@ class ListReservationView(generics.ListAPIView):
 
 class RetrieveReservationView(generics.RetrieveAPIView):
     queryset = Reservation.objects.all()
-    serailizer_class = ReservationSerializer
+    serializer_class = ReservationSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
@@ -659,12 +659,14 @@ class CreateReportView(generics.CreateAPIView):
     permission_classes = [IsAuthenticated]
 
     def perform_create(self, serializer):
-        report = serializer.save(user=self.request.user)
+        report = serializer.validated_data.get("resturant")
         # Notify restaurant owner about the report
         create_notification_for_user(
-            report.resturant.owner,
-            message=f"New report submitted: {report.title}. Subject: {report.subject}\nPlease review and take action.",
+            report.owner,
+            message=f"New report submitted: reason {serializer.validated_data.get("reason")}. from: {serializer.validated_data.get("customer").username}\nPlease review and take action.",
         )
+        serializer.save()
+        
 
 
 class ListReportView(generics.ListAPIView):
@@ -704,7 +706,7 @@ class ResolveReportView(APIView):
             report.user,
             message=f"Your report has been resolved by {report.resturant.owner.username}. Resolution: {report.resolution}",
         )
-        Response({"message": "report resloved"}, status=200)
+        return Response({"message": "report resloved"}, status=200)
 
 
 class ListNotificationView(generics.ListAPIView):
@@ -737,6 +739,7 @@ class Is_readNotificationView(APIView):
             raise PermissionDenied("you are not permitted to view this")
         notification.is_read = True
         notification.save()
+        return Response({"message":"notification read"},status=200)
 
 
 class CreatePaymentView(generics.CreateAPIView):
@@ -853,16 +856,16 @@ class DestroyKitchenView(generics.DestroyAPIView):
     serializer_class = KitchenOrderSerializer
     permission_classes = [IsAuthenticated]
 
-    def perform_destroy(self, serializer):
+    def perform_destroy(self, instance):
         if (
             self.request.user.role != "chef"
-            and serializer.validated_data["order"].table.resturant.owner
+            and instance.validated_data("order").table.resturant.owner
             != self.request.user
         ):
             raise PermissionDenied(
                 "action can only be performed by chefs or resturant managers"
             )
-        serializer.save(owner=self.request.user)
+        instance.delete()
 
 
 class CancelKitchenView(generics.UpdateAPIView):
@@ -1009,13 +1012,13 @@ class DestroyInventoryView(generics.DestroyAPIView):
     serializer_class = InventorySerializer
     permission_classes = [IsAuthenticated]
 
-    def perform_destroy(self, serializer):
+    def perform_destroy(self, instance):
         if (
             self.request.user.role != "manager"
-            and serializer.validated_data["resturant"].owner != self.request.user
+            and instance.validated_data.get("resturant").owner != self.request.user
         ):
             raise PermissionDenied("action can only be performed by managers")
-        serializer.save(owner=self.request.user)
+        instance.delete()
 
 
 class CreateInventoryTransactionView(generics.CreateAPIView):

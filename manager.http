@@ -1,8 +1,8 @@
-@manager_Bearer_token=
-@manager_uuid=
+@manager_Bearer_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzg3MTgyOTYwLCJpYXQiOjE3ODcxODExNjAsImp0aSI6ImE1MWQ4ODAyYTdmODQ3MzE4MTdlMGQ4ODdkYTQ0ZDI4IiwidXNlcl9pZCI6ImVlNzk0NjNkLTYxYWUtNDdhYS04Y2IwLTNhMTRmYzhlZjY1NiJ9.LkCc8FEbj8vu5HcV2viBdmB90fUm-e8Mw81DZxTR90M
 
-@customer_uuid=
+@customer_uuid=3557efcb3745425ba727577da669283f
 
+@manager_uuid=ee79463d61ae47aa8cb03a14fc8ef656
 
 ### Register a new user
 POST http://127.0.0.1:8000/api/register/
@@ -51,11 +51,11 @@ Content-Type: application/json
 Authorization: Bearer {{manager_Bearer_token}}
 
 {
-  "Resturant": 1,
+  "Resturant": 2,
   "invited_by":"{{manager_uuid}}",
   "Staff": "{{customer_uuid}}",
-  "role": "waiter",
-  "message": "you have been invited to work with us as a waiter ",
+  "role": "chef",
+  "message": "you have been invited to work with us as a chef ",
   "expiring":"2026-12-20"
 }
 
@@ -74,7 +74,7 @@ Content-Type: application/json
 Authorization: Bearer {{manager_Bearer_token}}
 
 {
-  "resturant": 1,
+  "resturant": 2,
   "name": "Beans",
   "description": "Fresh homemade Beans"
 }
@@ -91,7 +91,7 @@ Content-Type: application/json
 Authorization: Bearer {{manager_Bearer_token}}
 
 {
-  "resturant": 1,
+  "resturant": 2,
   "category": 1,
   "name": "Margherita Burger",
   "image":null,
@@ -113,9 +113,9 @@ Content-Type: application/json
 Authorization: Bearer {{manager_Bearer_token}}
 
 {
-  "resturant": 1,
-  "table_number": 2,
-  "capacity": 2,
+  "resturant":2,
+  "table_number": 1,
+  "capacity": 5,
   "state": "available"
 }
 
@@ -146,19 +146,19 @@ Authorization: Bearer {{manager_Bearer_token}}
 
 ### List Reports
 GET http://127.0.0.1:8000/api/list_report/
-Authorization: Bearer YOUR_TOKEN_HERE
+Authorization: Bearer {{manager_Bearer_token}}
 
 ### Resolve Report
 POST http://127.0.0.1:8000/api/resolve_report/1/
 Content-Type: application/json
-Authorization: Bearer YOUR_TOKEN_HERE
+Authorization: Bearer {{manager_Bearer_token}}
 
 {
   "resolution": "We replaced the pizza with a fresh one"
 }
-
+###
 GET http://127.0.0.1:8000/api/list_notification/
 Authorization: Bearer {{manager_Bearer_token}}
-
-POST http://127.0.0.1:8000/api/read_notification/1/
+###
+POST http://127.0.0.1:8000/api/read_notification/35/
 Authorization: Bearer {{manager_Bearer_token}}
