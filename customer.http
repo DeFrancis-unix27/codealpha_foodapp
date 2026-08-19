@@ -1,0 +1,87 @@
+@customer_Bearer_token=
+@customer_uuid=
+
+
+### Register a new user
+POST http://127.0.0.1:8000/api/register/
+Content-Type: application/json
+
+{
+  "first_name":"benson",
+  "last_name":"mark",
+  "username": "janeop",
+  "email": "jane89@gmail.com",
+  "password": "janelint",
+  "confirm_password":"janelint",
+  "phone_number":"0908745372"
+}
+
+### Login (Get JWT Token)
+POST http://127.0.0.1:8000/api/login/
+Content-Type: application/json
+
+{
+  "username": "janeop",
+  "password": "janelint"
+}
+
+
+### List All Restaurants
+GET http://127.0.0.1:8000/api/list_resturant/
+
+
+### List Staff Invites
+GET http://127.0.0.1:8000/api/list_invitestaff/
+Authorization: Bearer {{customer_Bearer_token}}
+
+
+### Accept Invite
+POST http://127.0.0.1:8000/api/accept_invite/9361eb19-c645-4772-b6c0-10c228428b71/
+Authorization: Bearer {{customer_Bearer_token}}
+
+### Reject Invite
+POST http://127.0.0.1:8000/api/reject_invite/0acf0835-360f-40bd-8c26-9dde98381fdb/
+Authorization: Bearer {{customer_Bearer_token}}
+
+
+### List Tables
+GET http://127.0.0.1:8000/api/list_table/
+Authorization: Bearer {{customer_Bearer_token}}
+
+
+### Create Reservation
+POST http://127.0.0.1:8000/api/create_reservation/
+Content-Type: application/json
+
+{
+  "customer": 2,
+  "table": 1,
+  "reservation_time": "2026-08-15T19:00:00Z",
+  "number_of_people": 4,
+  "guest_name": "janeop mark",
+  "special_requests": "back seat preferred"
+}
+
+
+### List Reservations
+GET http://127.0.0.1:8000/api/list_reservation/
+Authorization: Bearer {{customer_Bearer_token}}
+
+
+### Create Report
+POST http://127.0.0.1:8000/api/create_report/
+Content-Type: application/json
+Authorization: Bearer {{customer_Bearer_token}}
+
+{
+  "resturant": 1,
+  "title": "Quality Issue",
+  "subject": "Food was cold",
+  "description": "The rice arrived sour"
+}
+
+GET http://127.0.0.1:8000/api/list_notification/
+Authorization: Bearer {{customer_Bearer_token}}
+
+POST http://127.0.0.1:8000/api/read_notification/1/
+Authorization: Bearer {{customer_Bearer_token}}

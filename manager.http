@@ -1,0 +1,164 @@
+@manager_Bearer_token=
+@manager_uuid=
+
+@customer_uuid=
+
+
+### Register a new user
+POST http://127.0.0.1:8000/api/register/
+Content-Type: application/json
+
+{
+  "first_name":"benson",
+  "last_name":"johnson",
+  "username": "hushman",
+  "email": "hushman97@gmail.com",
+  "password": "hushman9902",
+  "confirm_password":"hushman9902",
+  "role": "manager",
+  "phone_number":"09045439303"
+}
+
+### Login (Get JWT Token)
+POST http://127.0.0.1:8000/api/login/
+Content-Type: application/json
+
+{
+  "username": "hushman",
+  "password": "hushman9902"
+}
+
+
+### Create Restaurant (Manager only)
+POST http://127.0.0.1:8000/api/create_resturant/
+Content-Type: application/json
+Authorization: Bearer {{manager_Bearer_token}}
+
+{
+  "owner":"{{manager_uuid}}",
+  "name": "HushMan Bestplace",
+  "description": "come to HushMan eat with courage ",
+  "location": "123 Main St",
+  "email": "contact@denson.com",
+  "opening_time": "09:00:00",
+  "closing_time": "22:00:00"
+}
+
+
+### Create Staff Invite
+POST http://127.0.0.1:8000/api/create_invitestaff/
+Content-Type: application/json
+Authorization: Bearer {{manager_Bearer_token}}
+
+{
+  "Resturant": 1,
+  "invited_by":"{{manager_uuid}}",
+  "Staff": "{{customer_uuid}}",
+  "role": "waiter",
+  "message": "you have been invited to work with us as a waiter ",
+  "expiring":"2026-12-20"
+}
+
+### List Staff Invites
+GET http://127.0.0.1:8000/api/list_invitestaff/
+Authorization: Bearer {{manager_Bearer_token}}
+
+### Delete Invite
+DELETE http://127.0.0.1:8000/api/delete_invitestaff/1/
+Authorization: Bearer {{manager_Bearer_token}}
+
+
+### Create Category
+POST http://127.0.0.1:8000/api/create_category/
+Content-Type: application/json
+Authorization: Bearer {{manager_Bearer_token}}
+
+{
+  "resturant": 1,
+  "name": "Beans",
+  "description": "Fresh homemade Beans"
+}
+
+
+### List Categories
+GET http://127.0.0.1:8000/api/list_category/
+Authorization: Bearer {{manager_Bearer_token}}
+
+
+### Create Menu Item
+POST http://127.0.0.1:8000/api/create_menu_item/
+Content-Type: application/json
+Authorization: Bearer {{manager_Bearer_token}}
+
+{
+  "resturant": 1,
+  "category": 1,
+  "name": "Margherita Burger",
+  "image":null,
+  "description": "Tomato, mozzarella, and basil",
+  "price": "12.99",
+  "preparation_time": "15:00",
+  "is_available": true
+}
+
+
+### List Menu Items
+GET http://127.0.0.1:8000/api/list_menu_item/
+Authorization: Bearer {{manager_Bearer_token}}
+
+
+### Create Table
+POST http://127.0.0.1:8000/api/create_table/
+Content-Type: application/json
+Authorization: Bearer {{manager_Bearer_token}}
+
+{
+  "resturant": 1,
+  "table_number": 2,
+  "capacity": 2,
+  "state": "available"
+}
+
+
+### List Reservations
+GET http://127.0.0.1:8000/api/list_reservation/
+Authorization: Bearer {{manager_Bearer_token}}
+
+### Create Order
+POST http://127.0.0.1:8000/api/create_order/
+Content-Type: application/json
+Authorization: Bearer {{manager_Bearer_token}}
+
+{
+  "customer": 1,
+  "table": 1,
+  "waiter": "cb092abcb528434f901904452f659a28",
+  "total_price": "25.98",
+  "status": "pending",
+  "order_type": "dine-in"
+}
+
+
+### List Orders
+GET http://127.0.0.1:8000/api/list_order/
+Authorization: Bearer {{manager_Bearer_token}}
+
+
+### List Reports
+GET http://127.0.0.1:8000/api/list_report/
+Authorization: Bearer YOUR_TOKEN_HERE
+
+### Resolve Report
+POST http://127.0.0.1:8000/api/resolve_report/1/
+Content-Type: application/json
+Authorization: Bearer YOUR_TOKEN_HERE
+
+{
+  "resolution": "We replaced the pizza with a fresh one"
+}
+
+GET http://127.0.0.1:8000/api/list_notification/
+Authorization: Bearer {{manager_Bearer_token}}
+
+POST http://127.0.0.1:8000/api/read_notification/1/
+Authorization: Bearer {{manager_Bearer_token}}

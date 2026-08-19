@@ -1,6 +1,6 @@
 from django.shortcuts import render, get_object_or_404
 from .models import *
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate, login,logout
 from rest_framework import generics
 from .serializers import *
 from rest_framework import status
@@ -251,7 +251,7 @@ class reject_inviteView(APIView):
             invite.invited_by,
             message=f"Hello {invite.invited_by} your request for {invite.role} at {invite.Resturant} has been rejected by {invite.staff} ",
         )
-        return invite
+        return Response({"message": "invite rejected"}, status=200)
 
 
 class DeleteInviteStaff(generics.DestroyAPIView):
@@ -481,7 +481,7 @@ class Cancel_Order_View(APIView):
                 order.table.resturant.owner,
                 message=f"your customer {order.customer} on {order.table} order has been cancelled",
             )
-        return order
+        return Response({"message": "order cancelled"}, status=200)
 
 
 class deliverOrderView(APIView):
@@ -516,7 +516,7 @@ class deliverOrderView(APIView):
                 order.table.resturant.owner,
                 message=f"the order has successfully be delivered to the customer {order.customer}",
             )
-        return order
+        return Response({"message": "order deliverd"}, status=200)
 
 
 class ListOrderView(generics.ListAPIView):
@@ -704,6 +704,7 @@ class ResolveReportView(APIView):
             report.user,
             message=f"Your report has been resolved by {report.resturant.owner.username}. Resolution: {report.resolution}",
         )
+        Response({"message": "report resloved"}, status=200)
 
 
 class ListNotificationView(generics.ListAPIView):
@@ -1094,88 +1095,93 @@ class DestroyReviewView(generics.DestroyAPIView):
         return Review.objects.filter(customer=self.request.user.customer)
 
 
-class PrivateDashboard(APIView):
-    permission_classes = [IsAuthenticated]
+# class PrivateDashboard(APIView):
+#     permission_classes = [IsAuthenticated]
 
-    def get(self, request):
-        if self.request.user.role == "manager":
-            resturants = Resturant.objects.filter(owner=self.request.user)
-            for resturant in resturants:
-                tables = Table.objects.filter(resturant=resturant)
-                cartegories = Category.objects.filter(resturant=resturant)
-                menuitems = MenuItem.objects.filter(resturant=resturant)
-                payments = Payment.objects.filter(resturant=resturant)
-                inventories = Inventory.objects.filter(resturant=resturant)
-                reviews = Review.objects.filter(resturant=resturant)
-                reports = Report.objects.filter(resturant=resturant)
+#     def get(self, request):
+#         if self.request.user.role == "manager":
+#             resturants = Resturant.objects.filter(owner=self.request.user)
+#             for resturant in resturants:
+#                 tables = Table.objects.filter(resturant=resturant)
+#                 cartegories = Category.objects.filter(resturant=resturant)
+#                 menuitems = MenuItem.objects.filter(resturant=resturant)
+#                 payments = Payment.objects.filter(resturant=resturant)
+#                 inventories = Inventory.objects.filter(resturant=resturant)
+#                 reviews = Review.objects.filter(resturant=resturant)
+#                 reports = Report.objects.filter(resturant=resturant)
 
-                details = {
-                    "section": "Tables".upper(),
-                    "tables_count": tables.count(),
-                    "tables": [table for table in tables],
-                    "section": "cartegories".upper(),
-                    "cartegories_count": cartegories.count(),
-                    "cartegories": [cartegory for cartegory in cartegories],
-                    "section": "menuitems".upper(),
-                    "menuitems_count": menuitems.count(),
-                    "menuitems": [menuitem for menuitem in menuitems],
-                    "section": "payments".upper(),
-                    "payments": [payment for payment in payments],
-                    "inventories": [inventory for inventory in inventories],
-                    "reviews": [review for review in reviews],
-                    "reports": [report for report in reports],
-                }
+#                 details = {
+#                     # "section": "Tables".upper(),
+#                     "tables_count": tables.count(),
+#                     "tables": [table for table in tables],
+#                     # "section": "cartegories".upper(),
+#                     "cartegories_count": cartegories.count(),
+#                     "cartegories": [cartegory for cartegory in cartegories],
+#                     # "section": "menuitems".upper(),
+#                     "menuitems_count": menuitems.count(),
+#                     "menuitems": [menuitem for menuitem in menuitems],
+#                     # "section": "payments".upper(),
+#                     "payments": [payment for payment in payments],
+#                     "inventories": [inventory for inventory in inventories],
+#                     "reviews": [review for review in reviews],
+#                     "reports": [report for report in reports],
+#                 }
 
-            invited_staff = InviteStaff.objects.filter(invited_by=self.request.user)
-            inventory_transactions = InventoryTransaction.objects.filter(
-                performed_by=self.request.user
-            )
-            rest_notifications = Notification.objects.filter(user=self.request.user)
-            rest_reservations = Reservation.objects.filter(customer__user = self.request.user)
-            # filter by resturant staffs
-            for staff in invited_staff:
-                if staff.status == "accepted" and staff.Resturant == resturant:
-                    if staff.role == "waiter":
-                        orders = Order.objects.filter(waiter=staff)
-                        notifications = Notification.objects.filter(user=staff)
-                        waiter_details = {
-                            "waiter": staff,
-                            "orders": [order for order in orders],
-                            "notifications": [
-                                notification for notification in notifications
-                            ],
-                        }
-                    if staff.role == "chef":
-                        kitchenorders = KitchenOrder.objects.filter(chef=staff)
-                        menu_items = MenuItem.objects.filter(chef=staff)
-                        notifications = Notification.objects.filter(user=staff)
-                        chef_details = {
-                            "chef": staff,
-                            "KitchenOrders": [kitOrd for kitOrd in kitchenorders],
-                            "menuitems": [menu for menu in menu_items],
-                            "notifications": [
-                                notification for notification in notifications
-                            ],
-                        }
-            return Response(
-                {
-                    f"{self.request.user}": {
-                        "resturants": [resturant for resturant in resturants],
-                        "details":details,
-                        "invited_staffs":[staff for staff in invited_staff],
-                        "inventory transactions":[transac for transac in inventory_transactions],
-                        "notifications":[notif for notif in rest_notifications],
-                        "waiter":waiter_details,
-                        "chef":chef_details,
-                        "reservations":[reserve for reserve in rest_reservations]
-                    }
-                },
-                status=200,
-            )
-        if self.request.user.role == "customer":
-            invites = InviteStaff.objects.filter(Staff=self.request.user)
-            reservations = Reservation.objects.filter(customer__user =self.request.user)
-            customers_orders = Order.objects.filter(customer__user=self.request.user)
-            customer_reviews = Review.objects.filter(customer__user=self.request.user)
+#             invited_staff = InviteStaff.objects.filter(invited_by=self.request.user)
+#             inventory_transactions = InventoryTransaction.objects.filter(
+#                 performed_by=self.request.user
+#             )
+#             rest_notifications = Notification.objects.filter(user=self.request.user)
+#             rest_reservations = Reservation.objects.filter(customer__user = self.request.user)
+#             # filter by resturant staffs
+#             for staff in invited_staff:
+#                 if staff.status == "accepted" and staff.Resturant == resturant:
+#                     if staff.role == "waiter":
+#                         orders = Order.objects.filter(waiter=staff)
+#                         notifications = Notification.objects.filter(user=staff)
+#                         waiter_details = {
+#                             "waiter": staff,
+#                             "orders": [order for order in orders],
+#                             "notifications": [
+#                                 notification for notification in notifications
+#                             ],
+#                         }
+#                     if staff.role == "chef":
+#                         kitchenorders = KitchenOrder.objects.filter(chef=staff)
+#                         menu_items = MenuItem.objects.filter(chef=staff)
+#                         notifications = Notification.objects.filter(user=staff)
+#                         chef_details = {
+#                             "chef": staff,
+#                             "KitchenOrders": [kitOrd for kitOrd in kitchenorders],
+#                             "menuitems": [menu for menu in menu_items],
+#                             "notifications": [
+#                                 notification for notification in notifications
+#                             ],
+#                         }
+#             return Response(
+#                 {
+#                     f"{self.request.user}": {
+#                         "resturants": [resturant for resturant in resturants],
+#                         "details":details,
+#                         "invited_staffs":[staff for staff in invited_staff],
+#                         "inventory transactions":[transac for transac in inventory_transactions],
+#                         "notifications":[notif for notif in rest_notifications],
+#                         "waiter":waiter_details,
+#                         "chef":chef_details,
+#                         "reservations":[reserve for reserve in rest_reservations]
+#                     }
+#                 },
+#                 status=200,
+#             )
+#         if self.request.user.role == "customer":
+#             invites = InviteStaff.objects.filter(Staff=self.request.user)
+#             reservations = Reservation.objects.filter(customer__user =self.request.user)
+#             customers_orders = Order.objects.filter(customer__user=self.request.user)
+#             customer_reviews = Review.objects.filter(customer__user=self.request.user)
+#             customer_notifications = Notification.objects.filter(user=self.request.user)
+#             customer_report = Report.objects.filter(customer__user=self.request.user)
+#             customer_points = Customer.objects.filter(user=self.request.user)
+
+
 
 
