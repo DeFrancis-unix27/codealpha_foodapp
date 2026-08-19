@@ -2,12 +2,12 @@
 ### Base URL: http://127.0.0.1:8000/api/
 
 
-@customer_Bearer_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzg2NzU5MzIwLCJpYXQiOjE3ODY3NTc1MjAsImp0aSI6ImM2ODE1M2U3YjU5NTRkNjBiYTkxOWYxZDEwOWUxODA4IiwidXNlcl9pZCI6ImRmNGNlMjZlLTMxNjQtNDlhNy1iNzVmLTUwNzEyZGZlNzNlZSJ9.C8OSd42DoPa8mT5J7m3QBBTHthK0ijAoMdCsBIpFm6k
-@manager_Bearer_token="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzg2NzU4NDQ3LCJpYXQiOjE3ODY3NTY2NDcsImp0aSI6IjEzZDVmOTQzMjQwMjRjMmJhM2E0MmE3YjJhMDM5NjM5IiwidXNlcl9pZCI6ImVhZjk1YzMzLTIxNDAtNDNkNS04YjAwLWRhNDg0NjJmNDFlYSJ9.RTr4Du7yfcxGY8S6VDjdhZMOdszHC3rgfNV84wXizoc
+@customer_Bearer_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzg3MDk3MjcwLCJpYXQiOjE3ODcwOTU0NzAsImp0aSI6ImMzZTY1MzI1MTI3MzQ2MjdiMjc3MTVmZjJiN2VkMmEwIiwidXNlcl9pZCI6IjZjOTk5MjdhLWViN2UtNGFkNS04ZDdkLWI3MmZlOGE5ZTQ1OSJ9.rKQorOBLkS-GV-A-h4UJuDq-ikN61rb5-VkcYQh8HtI
+@manager_Bearer_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzg3MTI5NjE5LCJpYXQiOjE3ODcxMjc4MTksImp0aSI6IjNhODdlNWE3ZTZmMzQ5NjRiMjUyZWUxNjAwODQ1YjEzIiwidXNlcl9pZCI6ImVhZjk1YzMzLTIxNDAtNDNkNS04YjAwLWRhNDg0NjJmNDFlYSJ9.yZlJdYoU4_bna5TG5f_uMoSDE1XWENVGgfSq1jKq0l8
 
 @manager_uuid=eaf95c33214043d58b00da48462f41ea
 
-@customer_uuid=df4ce26e316449a7b75f50712dfe73ee
+@customer_uuid=6c99927aeb7e4ad58d7db72fe8a9e459
 ### ============================================
 ### AUTHENTICATION ENDPOINTS
 ### ============================================
@@ -32,7 +32,7 @@ POST http://127.0.0.1:8000/api/login/
 Content-Type: application/json
 
 {
-  "username": "pope",
+  "username": "oliva",
   "password": "davenlab"
 }
 
@@ -102,7 +102,7 @@ Authorization: Bearer {{manager_Bearer_token}}
   "invited_by":"{{manager_uuid}}",
   "Staff": "{{customer_uuid}}",
   "role": "waiter",
-  "message": "Join our team as a chef",
+  "message": "you have been invited to work with us ",
   "expiring":"2026-12-20"
 }
 
@@ -115,7 +115,7 @@ GET http://127.0.0.1:8000/api/retrive_invitestaff/1/
 Authorization: Bearer {{customer_Bearer_token}}
 
 ### Accept Invite
-POST http://127.0.0.1:8000/api/accept_invite/cb092abc-b528-434f-9019-04452f659a28/
+POST http://127.0.0.1:8000/api/accept_invite/9361eb19-c645-4772-b6c0-10c228428b71/
 Authorization: Bearer {{customer_Bearer_token}}
 
 ### Reject Invite
@@ -273,12 +273,12 @@ Authorization: Bearer YOUR_TOKEN_HERE
 ### Create Order
 POST http://127.0.0.1:8000/api/create_order/
 Content-Type: application/json
-Authorization: Bearer {{customer_Bearer_token}}
+Authorization: Bearer {{manager_Bearer_token}}
 
 {
   "customer": 1,
   "table": 1,
-  "waiter": "df4ce26e-3164-49a7-b75f-50712dfe73ee",
+  "waiter": "cb092abcb528434f901904452f659a28",
   "total_price": "25.98",
   "status": "pending",
   "order_type": "dine-in"
@@ -286,7 +286,7 @@ Authorization: Bearer {{customer_Bearer_token}}
 
 ### List Orders
 GET http://127.0.0.1:8000/api/list_order/
-Authorization: Bearer YOUR_TOKEN_HERE
+Authorization: Bearer {{manager_Bearer_token}}
 
 ### Retrieve Order
 GET http://127.0.0.1:8000/api/retrive_order/1/

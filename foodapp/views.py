@@ -201,8 +201,6 @@ class accept_inviteView(APIView):
 
     def post(self, request, rest_id):
         invite = get_object_or_404(InviteStaff, id=rest_id)
-        print(invite.Staff)
-        print(self.request.user)
         if (
             invite.Staff != self.request.user
             or invite.status != "pending"
@@ -222,7 +220,7 @@ class accept_inviteView(APIView):
             invite.invited_by,
             message=f"Hello {invite.invited_by} your request for {invite.role} at {invite.Resturant} has been accepted by {invite.Staff}",
         )
-        return invite
+        return Response({"message": "invite accepted"}, status=200)
 
 
 class reject_inviteView(APIView):
@@ -328,10 +326,16 @@ class CreateMenuItemView(generics.CreateAPIView):
         category = serializer.validated_data["category"]
         restaurant = category.resturant
 
-        if self.request.user.role != "manager" and self.request.user != restaurant.owner:
+        if (
+            self.request.user.role != "manager"
+            and self.request.user != restaurant.owner
+        ):
             raise PermissionDenied("Your are not approved to perform this action")
 
-        serializer.save(resturant=restaurant, chef=self.request.user if self.request.user.role == "chef" else None)
+        serializer.save(
+            resturant=restaurant,
+            chef=self.request.user if self.request.user.role == "chef" else None,
+        )
 
 
 class ListMenuItemView(generics.ListAPIView):
@@ -353,9 +357,14 @@ class UpdateMenuItemView(generics.UpdateAPIView):
 
     def perform_update(self, serializer):
         category = serializer.validated_data.get("category")
-        restaurant = serializer.instance.resturant if category is None else category.resturant
+        restaurant = (
+            serializer.instance.resturant if category is None else category.resturant
+        )
 
-        if self.request.user.role != "manager" and self.request.user != restaurant.owner:
+        if (
+            self.request.user.role != "manager"
+            and self.request.user != restaurant.owner
+        ):
             raise PermissionDenied("Your are not approved to perform this action")
 
         serializer.save(resturant=restaurant)
@@ -369,7 +378,10 @@ class DestroyMenuItemView(generics.DestroyAPIView):
     def perform_destroy(self, serializer):
         restaurant = serializer.instance.resturant
 
-        if self.request.user.role != "manager" and self.request.user != restaurant.owner:
+        if (
+            self.request.user.role != "manager"
+            and self.request.user != restaurant.owner
+        ):
             raise PermissionDenied("Your are not approved to perform this action")
 
         serializer.delete()
@@ -385,16 +397,7 @@ class CreateOrderView(generics.CreateAPIView):
         waiter = serializer.validated_data.get("waiter")
         table = serializer.validated_data.get("table")
         manager = waiter.invited_by
-        
-        # Find a chef in the same resturant as the table
-        chef_staff = InviteStaff.objects.filter(
-            Resturant=table.resturant, role="chef", status="accepted"
-        ).first()
-        if not chef_staff:
-            raise ValidationError("No chef available in this resturant")
 
-        chef = chef_staff.Staff
-        
         # Validate permissions
         if table.resturant == waiter.Resturant or table.resturant == manager.Resturant:
             # check if table is available
@@ -404,16 +407,15 @@ class CreateOrderView(generics.CreateAPIView):
             raise PermissionDenied("Only waiters working \
              at the resturant can create an other \
             ")
-        if chef_staff.Resturant == table.resturant:
-            create_notification_for_user(
-                chef,
-                message=f" hello Chef an Order has been placed at {table.resturant} by a customer called {serializer.validated_data.get('customer').username} go to your order_items to view more details",
-            )
-            create_notification_for_user(
-                serializer.validated_data.get("customer"),
-                message=f"Hello {serializer.validated_data.get('customer').username} your order at {table.resturant} has been placed",
-            )
-        serializer.save(chef=self.request.user)
+        create_notification_for_user(
+            waiter,
+            message=f" hello Chef an Order has been placed at {table.resturant} by a customer called {serializer.validated_data.get('customer').username} go to your order_items to view more details",
+        )
+        create_notification_for_user(
+            serializer.validated_data.get("customer"),
+            message=f"Hello {serializer.validated_data.get('customer').username} your order at {table.resturant} has been placed",
+        )
+        serializer.save()
 
 
 class UpdateOrderView(generics.UpdateAPIView):
@@ -547,7 +549,6 @@ class RetrieveOrderView(generics.RetrieveAPIView):
             return Order.objects.filter(table__resturant__owner=self.request.user)
         else:
             raise PermissionDenied("you are not allowed to view this orders")
-        
 
 
 class CreateTableView(generics.CreateAPIView):
@@ -748,7 +749,9 @@ class CreatePaymentView(generics.CreateAPIView):
             raise PermissionDenied("you are not allowed to make payment for this order")
         if order.status != "delivered":
             raise ValidationError("you can only make payment for delivered orders")
-        payment = serializer.save(sender=self.request.user, resturant=order.table.resturant)
+        payment = serializer.save(
+            sender=self.request.user, resturant=order.table.resturant
+        )
         payment.customer = self.request.user.customer
         payment.save()
         # Notify restaurant owner
@@ -1089,3 +1092,90 @@ class DestroyReviewView(generics.DestroyAPIView):
         if self.request.user != review.resturant.owner:
             raise PermissionDenied("you are not allowed to delete this review")
         return Review.objects.filter(customer=self.request.user.customer)
+
+
+class PrivateDashboard(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        if self.request.user.role == "manager":
+            resturants = Resturant.objects.filter(owner=self.request.user)
+            for resturant in resturants:
+                tables = Table.objects.filter(resturant=resturant)
+                cartegories = Category.objects.filter(resturant=resturant)
+                menuitems = MenuItem.objects.filter(resturant=resturant)
+                payments = Payment.objects.filter(resturant=resturant)
+                inventories = Inventory.objects.filter(resturant=resturant)
+                reviews = Review.objects.filter(resturant=resturant)
+                reports = Report.objects.filter(resturant=resturant)
+
+                details = {
+                    "section": "Tables".upper(),
+                    "tables_count": tables.count(),
+                    "tables": [table for table in tables],
+                    "section": "cartegories".upper(),
+                    "cartegories_count": cartegories.count(),
+                    "cartegories": [cartegory for cartegory in cartegories],
+                    "section": "menuitems".upper(),
+                    "menuitems_count": menuitems.count(),
+                    "menuitems": [menuitem for menuitem in menuitems],
+                    "section": "payments".upper(),
+                    "payments": [payment for payment in payments],
+                    "inventories": [inventory for inventory in inventories],
+                    "reviews": [review for review in reviews],
+                    "reports": [report for report in reports],
+                }
+
+            invited_staff = InviteStaff.objects.filter(invited_by=self.request.user)
+            inventory_transactions = InventoryTransaction.objects.filter(
+                performed_by=self.request.user
+            )
+            rest_notifications = Notification.objects.filter(user=self.request.user)
+            rest_reservations = Reservation.objects.filter(customer__user = self.request.user)
+            # filter by resturant staffs
+            for staff in invited_staff:
+                if staff.status == "accepted" and staff.Resturant == resturant:
+                    if staff.role == "waiter":
+                        orders = Order.objects.filter(waiter=staff)
+                        notifications = Notification.objects.filter(user=staff)
+                        waiter_details = {
+                            "waiter": staff,
+                            "orders": [order for order in orders],
+                            "notifications": [
+                                notification for notification in notifications
+                            ],
+                        }
+                    if staff.role == "chef":
+                        kitchenorders = KitchenOrder.objects.filter(chef=staff)
+                        menu_items = MenuItem.objects.filter(chef=staff)
+                        notifications = Notification.objects.filter(user=staff)
+                        chef_details = {
+                            "chef": staff,
+                            "KitchenOrders": [kitOrd for kitOrd in kitchenorders],
+                            "menuitems": [menu for menu in menu_items],
+                            "notifications": [
+                                notification for notification in notifications
+                            ],
+                        }
+            return Response(
+                {
+                    f"{self.request.user}": {
+                        "resturants": [resturant for resturant in resturants],
+                        "details":details,
+                        "invited_staffs":[staff for staff in invited_staff],
+                        "inventory transactions":[transac for transac in inventory_transactions],
+                        "notifications":[notif for notif in rest_notifications],
+                        "waiter":waiter_details,
+                        "chef":chef_details,
+                        "reservations":[reserve for reserve in rest_reservations]
+                    }
+                },
+                status=200,
+            )
+        if self.request.user.role == "customer":
+            invites = InviteStaff.objects.filter(Staff=self.request.user)
+            reservations = Reservation.objects.filter(customer__user =self.request.user)
+            customers_orders = Order.objects.filter(customer__user=self.request.user)
+            customer_reviews = Review.objects.filter(customer__user=self.request.user)
+
+
